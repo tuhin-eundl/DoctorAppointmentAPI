@@ -1,11 +1,12 @@
-﻿using DoctorAppointment.Domain;
+﻿using DoctorAppointment.Application.Contracts;
+using DoctorAppointment.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace DoctorAppointment.Infrastructures.Database;
 
-public sealed class AppDbContext : DbContext
+public sealed class AppDbContext : AuditDbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public AppDbContext(DbContextOptions<AppDbContext> options, IExecutionContextAccessor contextAccessor) : base(options, contextAccessor) { }
 
     public DbSet<User> Users { get; set; }
 
