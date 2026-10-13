@@ -60,8 +60,12 @@ public sealed class UserService : BaseService<User>,IUserService, IService<User>
             user,
             user.Password,
             password);
+        if(result == PasswordVerificationResult.Success)
+        {
+            return UserProfiles.EntityToDto(user);
+        }
 
-        return UserProfiles.EntityToDto(user);
+        return null;
     }
 }
 
