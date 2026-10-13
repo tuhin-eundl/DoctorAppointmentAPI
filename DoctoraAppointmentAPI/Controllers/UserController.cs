@@ -1,6 +1,7 @@
 ﻿using DoctorAppointment.Application.Contracts;
 using DoctorAppointment.Application.DTOs.Users;
 using DoctorAppointment.Application.Profiles.Users;
+using DoctorAppointment.Application.Validations.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,6 +37,12 @@ public sealed class UserController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] UserDto user)
     {
+        var errors = UserDtoValidation.IsValid(user);
+        if (errors.Any())
+        {
+            return BadRequest(errors);
+        }
+
         var userEntity = UserProfiles.DtoToEntity(user);
         var createdUser = await _userService.AddAsync(userEntity);
         return CreatedAtAction(nameof(CreateUser), UserProfiles.EntityToDto(createdUser));

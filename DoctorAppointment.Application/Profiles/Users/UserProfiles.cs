@@ -18,9 +18,10 @@ public static class UserProfiles
             Email = userDto.Email,
             Age = userDto.Age,
             Gender = userDto.Gender,
-            Role = userDto.Role,
-            Department = userDto.Department
-
+            Role = Enum.Parse<UserRole>(userDto.Role, ignoreCase: true),
+            Department = userDto.Department is null
+                ? Department.NA
+                : Enum.Parse<Department>(userDto.Department, ignoreCase: true)
         };
     }
 
@@ -32,12 +33,12 @@ public static class UserProfiles
             user.LastName,
             user.Title,
             user.Username,
-            null,
+            user.Password,
             user.Email,
             user.Age,
             user.Gender,
-            user.Role,
-            user.Department
+            user.Role.ToString(),
+            user.Department.ToString()
         );
 
     }

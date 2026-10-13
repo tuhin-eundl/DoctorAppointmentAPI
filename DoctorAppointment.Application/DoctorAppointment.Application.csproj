@@ -18,8 +18,4 @@
     <ProjectReference Include="..\DoctorAppoinment.Domain\DoctorAppointment.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Validations\" />
-  </ItemGroup>
-
 </Project>

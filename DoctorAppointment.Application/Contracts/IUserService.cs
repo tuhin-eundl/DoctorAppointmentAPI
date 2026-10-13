@@ -7,5 +7,5 @@ public interface IUserService : IService<User>
 {
     Task<UserDto?> GetAsync(int id);
     new Task<IReadOnlyList<UserDto?>> ListAsync();
-    Task<bool> IsValidUser(string username, string password);
+    Task<UserDto?> IsValidUser(string username, string password);
 }

@@ -40,17 +40,20 @@ public sealed class UserService : BaseService<User>,IUserService, IService<User>
         entity.Password = _passwordHasher.HashPassword(
             entity,
             entity.Password);
+        entity.CreatedAt = DateTime.UtcNow;
+        entity.CreatedBy = entity.Username;
+
         return base.AddAsync(entity);
     }
 
-    public async Task<bool> IsValidUser(string username, string password)
+    public async Task<UserDto?> IsValidUser(string username, string password)
     {
         var user = await _repository.Query()
             .FirstOrDefaultAsync(u => u.Username == username);
 
         if (user is null)
         {
-            return false;
+            return null;
         }
 
         var result = _passwordHasher.VerifyHashedPassword(
@@ -58,7 +61,7 @@ public sealed class UserService : BaseService<User>,IUserService, IService<User>
             user.Password,
             password);
 
-        return result != PasswordVerificationResult.Failed;
+        return UserProfiles.EntityToDto(user);
     }
 }
 

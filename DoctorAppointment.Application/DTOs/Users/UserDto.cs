@@ -1,6 +1,4 @@
-﻿using DoctorAppointment.Domain;
-
-namespace DoctorAppointment.Application.DTOs.Users;
+﻿namespace DoctorAppointment.Application.DTOs.Users;
 
 public record UserDto(
     int Id,
@@ -8,10 +6,10 @@ public record UserDto(
     string? LastName,
     string? Title,
     string Username,
-    string? Password,
+    string Password,
     string? Email,
     int? Age,
     string? Gender,
-    UserRole Role,
-    Department? Department);
+    string Role,
+    string? Department);
 
