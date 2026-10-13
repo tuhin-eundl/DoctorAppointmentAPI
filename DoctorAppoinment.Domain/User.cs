@@ -12,6 +12,7 @@ public sealed class User : AuditableEntity
     public string? Title { get; set; }
     [MaxLength(50)]
     public required string Username { get; set; }
+    [MinLength(6)]
     public required string Password { get; set; }
     public string? Email { get; set; }
     public int? Age { get; set; }

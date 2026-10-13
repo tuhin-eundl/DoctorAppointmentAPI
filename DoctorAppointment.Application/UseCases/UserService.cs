@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DoctorAppointment.Application.UseCases;
 
-public sealed class UserService : BaseService<User>,IUserService, IService<User>
+public sealed class UserService : BaseService<User>, IUserService, IService<User>
 {
     private readonly IUserRepository _repository;
     private readonly PasswordHasher<User> _passwordHasher = new();
@@ -21,7 +21,7 @@ public sealed class UserService : BaseService<User>,IUserService, IService<User>
     public async Task<UserDto?> GetAsync(int id)
     {
         var user = await base.GetAsync(id);
-        if(user == null)
+        if (user == null)
             throw new NotFoundException(nameof(User), id);
         var userDto = UserProfiles.EntityToDto(user);
         return userDto;
@@ -60,7 +60,7 @@ public sealed class UserService : BaseService<User>,IUserService, IService<User>
             user,
             user.Password,
             password);
-        if(result == PasswordVerificationResult.Success)
+        if (result == PasswordVerificationResult.Success)
         {
             return UserProfiles.EntityToDto(user);
         }
@@ -68,4 +68,3 @@ public sealed class UserService : BaseService<User>,IUserService, IService<User>
         return null;
     }
 }
-

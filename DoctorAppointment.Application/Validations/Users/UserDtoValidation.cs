@@ -17,8 +17,10 @@ public static class UserDtoValidation
             errors.Add("Title is invalid.");
         if (string.IsNullOrWhiteSpace(userDto.Username) || userDto.Username.Length > 50)
             errors.Add("Username is invalid.");
-        if (string.IsNullOrWhiteSpace(userDto.Password) || userDto.Password.Length > 50)
+        if (string.IsNullOrWhiteSpace(userDto.Password))
             errors.Add("Password is invalid.");
+        if (userDto.Password.Length < 6)
+            errors.Add("Password must be at least 6 characters long.");
         if (userDto.Age.HasValue && (userDto.Age < 0 || userDto.Age > 120))
             errors.Add("Age is invalid.");
         if (!string.IsNullOrWhiteSpace(userDto.Role) && userDto.Role.Length > 50 && !Enum.IsDefined(typeof(UserRole), userDto.Role))
