@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 var keyBytes = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? string.Empty);
 if (keyBytes.Length == 0)
 {
-    throw new InvalidOperationException("Jwt:Key is not configured in appsettings.json");
+    throw new InvalidOperationException("Jwt:Key is not configured");
 }
 
 builder.Services.AddAuthentication(options =>
@@ -39,16 +39,20 @@ builder.Services.AddControllers();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Swagger / OpenAPI (Swashbuckle)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Enable Swagger UI at /swagger/index.html
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.MapOpenApi();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "DoctorAppointment API v1");
+    c.RoutePrefix = "swagger"; // serve at /swagger
+});
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
