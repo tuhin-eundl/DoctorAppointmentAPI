@@ -1,0 +1,6 @@
+@DoctoraAppointmentAPI_HostAddress = http://localhost:5199
+
+GET {{DoctoraAppointmentAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
