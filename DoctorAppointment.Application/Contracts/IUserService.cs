@@ -5,7 +5,7 @@ namespace DoctorAppointment.Application.Contracts;
 
 public interface IUserService : IService<User>
 {
-    Task<UserDto?> GetAsync(int id);
     new Task<IReadOnlyList<UserDto?>> ListAsync();
     Task<UserDto?> IsValidUser(string username, string password);
+    Task<bool> UserExistsAsync(string username, string? email, int? id);
 }

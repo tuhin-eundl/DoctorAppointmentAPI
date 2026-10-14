@@ -39,7 +39,19 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : class
 
     public virtual async Task<bool> DeleteAsync(T entity)
     {
-        Table.Remove(entity);
+        var entry = _db.Entry(entity);
+        var isDeletedProperty = entry.Metadata.FindProperty("IsDeleted");
+
+        if (isDeletedProperty?.ClrType == typeof(bool))
+        {
+            entry.Property("IsDeleted").CurrentValue = true;
+            entry.State = EntityState.Modified;
+        }
+        else
+        {
+            Table.Remove(entity);
+        }
+
         return await _db.SaveChangesAsync() > 0;
     }
 

@@ -11,7 +11,7 @@ public abstract class BaseService<T> : IService<T> where T : class
         _repository = repository;
     }
 
-    public virtual async Task<T?> GetAsync(object id)
+    public virtual async Task<T?> GetAsync(int id)
     {
         return await _repository.GetAsync(id);
     }

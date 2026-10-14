@@ -18,15 +18,6 @@ public sealed class UserService : BaseService<User>, IUserService, IService<User
         _repository = repository;
     }
 
-    public async Task<UserDto?> GetAsync(int id)
-    {
-        var user = await base.GetAsync(id);
-        if (user == null)
-            throw new NotFoundException(nameof(User), id);
-        var userDto = UserProfiles.EntityToDto(user);
-        return userDto;
-    }
-
     public async Task<IReadOnlyList<UserDto?>> ListAsync()
     {
         var users = await _repository.ListAsync();
@@ -35,15 +26,32 @@ public sealed class UserService : BaseService<User>, IUserService, IService<User
             .ToList();
     }
 
-    public override Task<User> AddAsync(User entity)
+    public override async Task<User> AddAsync(User entity)
     {
+        if (await UserExistsAsync(entity.Username, entity.Email, null))
+        {
+            throw new ConflictException("User with the same username or email already exists.");
+        }
+
         entity.Password = _passwordHasher.HashPassword(
             entity,
             entity.Password);
         entity.CreatedAt = DateTime.UtcNow;
         entity.CreatedBy = entity.Username;
 
-        return base.AddAsync(entity);
+        return await base.AddAsync(entity);
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        var user = await _repository.GetAsync(id);
+
+        if (user is null)
+        {
+            throw new NotFoundException(nameof(User), id);
+        }
+
+        await _repository.DeleteAsync(user);
     }
 
     public async Task<UserDto?> IsValidUser(string username, string password)
@@ -66,5 +74,23 @@ public sealed class UserService : BaseService<User>, IUserService, IService<User
         }
 
         return null;
+    }
+
+    public async Task<bool> UserExistsAsync(
+        string username,
+        string? email,
+        int? id)
+    {
+        var query = _repository.Query()
+            .Where(u => u.Username == username ||
+                        (email != null && u.Email == email));
+
+        if (id.HasValue)
+        {
+            query = query.Where(u => u.Id != id.Value);
+        }
+
+        return await query.AnyAsync();
+
     }
 }

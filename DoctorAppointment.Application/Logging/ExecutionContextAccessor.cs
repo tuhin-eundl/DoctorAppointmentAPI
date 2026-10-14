@@ -32,7 +32,7 @@ public class ExecutionContextAccessor : IExecutionContextAccessor
         if (string.IsNullOrEmpty(token)) return null;
 
         var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        return jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+        return jwtToken.Claims.FirstOrDefault(c => c.Type == "userName")?.Value;
     }
 
     private string? GetAccessToken()

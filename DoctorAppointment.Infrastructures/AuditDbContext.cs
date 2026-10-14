@@ -13,26 +13,27 @@ public abstract class AuditDbContext : DbContext
         _contextAccessor = contextAccessor;
     }
 
-    public async Task<int> SaveChangesAsync(string userName = "")
+    public override async Task<int> SaveChangesAsync(
+        CancellationToken cancellationToken = default)
     {
-        var username = string.IsNullOrEmpty(userName) ? _contextAccessor.UserName : userName;
-        foreach (var entry in base.ChangeTracker.Entries<AuditableEntity>()
-                     .Where(q => q.State
-                         is EntityState.Added
+        var username = _contextAccessor.UserName;
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>()
+                     .Where(e => e.State is EntityState.Added
                          or EntityState.Modified))
         {
-            entry.Entity.UpdatedAt = DateTime.Now;
+            entry.Entity.UpdatedAt = now;
             entry.Entity.UpdatedBy = username;
 
-            if (entry.State != EntityState.Added) continue;
-
-            entry.Entity.CreatedAt = DateTime.Now;
-            entry.Entity.CreatedBy = username;
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = now;
+                entry.Entity.CreatedBy = username;
+            }
         }
 
-        var result = await base.SaveChangesAsync();
-
-        return result;
+        return await base.SaveChangesAsync(cancellationToken);
     }
 }
 

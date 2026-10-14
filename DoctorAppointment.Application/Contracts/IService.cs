@@ -2,7 +2,7 @@
 
 public interface IService<T> where T : class
 {
-    Task<T?> GetAsync(object id);
+    Task<T?> GetAsync(int id);
     Task<IEnumerable<T>> ListAsync();
     Task<T> AddAsync(T entity);
     Task<T> UpdateAsync(T entity);

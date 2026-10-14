@@ -1,11 +1,12 @@
 ﻿using DoctorAppointment.Application.Contracts;
 using DoctorAppointment.Application.DTOs.Auth;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Configuration;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace DoctorAppointment.Service.Controllers;
 
@@ -22,7 +23,15 @@ public class AuthController : ControllerBase
         _configuration = configuration;
     }
 
-    [HttpPost]
+
+    [HttpPost("login")]
+    [Produces("application/json")]
+    [SwaggerOperation("Returns a token for the authenticated user.")]
+    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the authentication token.", typeof(TokenResponseDto))]
+    [SwaggerResponse((int)HttpStatusCode.NotFound, "Returned if no user with the specified credentials exists.")]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
+    [SwaggerResponse((int)HttpStatusCode.Forbidden, "Returned if the user doesn't have the correct permissions to execute the action.")]
+    [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
     public async Task<IActionResult> Login([FromBody] LoginDto request)
     {
         var validUser = await _userService.IsValidUser(request.UserName, request.Password);
@@ -31,7 +40,6 @@ public class AuthController : ControllerBase
             return Unauthorized("Invalid username or password");
         }
 
-        // Create JWT
         var key = _configuration["Jwt:Key"] ?? string.Empty;
         if (string.IsNullOrEmpty(key))
             throw new InvalidOperationException("Jwt:Key is not configured");
@@ -64,7 +72,10 @@ public class AuthController : ControllerBase
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
-        return Ok(new TokenResponseDto(tokenString, (int)TimeSpan.FromMinutes(expireMinutes).TotalSeconds));
+        return Ok(new TokenResponseDto(
+            tokenString,
+            validUser.Role,
+            (int)TimeSpan.FromMinutes(expireMinutes).TotalSeconds));
     }
 
 }
