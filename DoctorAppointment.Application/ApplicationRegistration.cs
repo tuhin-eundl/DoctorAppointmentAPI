@@ -11,6 +11,7 @@ public static class ApplicationRegistration
     {
         services.AddScoped<IExecutionContextAccessor, ExecutionContextAccessor>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
 
         return services;
     }

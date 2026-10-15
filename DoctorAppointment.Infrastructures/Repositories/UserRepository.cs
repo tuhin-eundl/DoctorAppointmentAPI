@@ -2,7 +2,7 @@
 using DoctorAppointment.Domain;
 using DoctorAppointment.Infrastructures.Database;
 
-namespace DoctorAppointment.Infrastructures;
+namespace DoctorAppointment.Infrastructures.Repositories;
 
 public sealed class UserRepository : BaseRepository<User>, IUserRepository
 {

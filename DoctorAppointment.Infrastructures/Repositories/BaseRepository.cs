@@ -1,7 +1,7 @@
 ﻿using DoctorAppointment.Application.Contracts;
 using Microsoft.EntityFrameworkCore;
 
-namespace DoctorAppointment.Infrastructures;
+namespace DoctorAppointment.Infrastructures.Repositories;
 
 public abstract class BaseRepository<T> : IBaseRepository<T> where T : class
 {
