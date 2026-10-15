@@ -3,7 +3,7 @@ using DoctorAppointment.Domain;
 
 namespace DoctorAppointment.Application.UseCases;
 
-public class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctorScheduleService, IService<DoctorSchedule>
+public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctorScheduleService, IService<DoctorSchedule>
 {
     private readonly IDoctorScheduleRepository _repository;
 
