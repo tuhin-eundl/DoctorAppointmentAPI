@@ -19,6 +19,7 @@ public sealed class User : AuditableEntity
     public string? Gender { get; set; }
     public UserRole Role { get; set; }
     public Department? Department { get; set; } = null;
+    public ICollection<DoctorSchedule> DoctorSchedules { get; set; } = [];
 }
 
 public enum UserRole
