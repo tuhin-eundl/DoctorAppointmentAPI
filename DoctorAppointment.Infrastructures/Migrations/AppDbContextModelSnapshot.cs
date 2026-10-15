@@ -17,10 +17,93 @@ namespace DoctorAppointment.Infrastructures.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("DoctorAppointment.Domain.DoctorSchedule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("FromDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("ToDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("DoctorSchedules");
+                });
+
+            modelBuilder.Entity("DoctorAppointment.Domain.DoctorScheduleDay", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DoctorScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("ScheduleDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorScheduleId");
+
+                    b.ToTable("DoctorScheduleDays");
+                });
 
             modelBuilder.Entity("DoctorAppointment.Domain.User", b =>
                 {
@@ -88,7 +171,39 @@ namespace DoctorAppointment.Infrastructures.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("DoctorAppointment.Domain.DoctorSchedule", b =>
+                {
+                    b.HasOne("DoctorAppointment.Domain.User", "Doctor")
+                        .WithMany("DoctorSchedules")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+                });
+
+            modelBuilder.Entity("DoctorAppointment.Domain.DoctorScheduleDay", b =>
+                {
+                    b.HasOne("DoctorAppointment.Domain.DoctorSchedule", "DoctorSchedule")
+                        .WithMany("ScheduleDays")
+                        .HasForeignKey("DoctorScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DoctorSchedule");
+                });
+
+            modelBuilder.Entity("DoctorAppointment.Domain.DoctorSchedule", b =>
+                {
+                    b.Navigation("ScheduleDays");
+                });
+
+            modelBuilder.Entity("DoctorAppointment.Domain.User", b =>
+                {
+                    b.Navigation("DoctorSchedules");
                 });
 #pragma warning restore 612, 618
         }

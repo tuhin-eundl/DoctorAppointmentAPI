@@ -9,6 +9,8 @@ public sealed class AppDbContext : AuditDbContext
     public AppDbContext(DbContextOptions<AppDbContext> options, IExecutionContextAccessor contextAccessor) : base(options, contextAccessor) { }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
+    public DbSet<DoctorScheduleDay> DoctorScheduleDays { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
