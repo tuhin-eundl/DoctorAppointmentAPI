@@ -3,11 +3,21 @@ using DoctorAppointment.Infrastructures;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using ModelContextProtocol.AspNetCore;
 using System.Text;
+using DoctorAppointment.Service.MCPTools;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddHttpClient("DoctorAppointmentApi", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Api:BaseUrl"]
+        ?? throw new InvalidOperationException(
+            "Api:BaseUrl is not configured"));
+});
 
 var keyBytes = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? string.Empty);
 if (keyBytes.Length == 0)
@@ -65,6 +75,14 @@ builder.Services.AddSwaggerGen(c =>
     c.EnableAnnotations();
 });
 
+builder.Services
+    .AddMcpServer()
+    .WithHttpTransport(options =>
+    {
+        options.SessionMode = HttpServerSessionMode.Stateless;
+    })
+    .WithTools<UserTools>();
+
 var app = builder.Build();
 
 app.UseSwagger();
@@ -82,5 +100,7 @@ app.UseAuthorization();
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapControllers();
+app.MapMcp("/mcp")
+    .RequireAuthorization();
 
 app.Run();
