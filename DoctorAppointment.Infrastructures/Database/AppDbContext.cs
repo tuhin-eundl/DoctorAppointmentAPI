@@ -6,7 +6,12 @@ namespace DoctorAppointment.Infrastructures.Database;
 
 public sealed class AppDbContext : AuditDbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options, IExecutionContextAccessor contextAccessor) : base(options, contextAccessor) { }
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options,
+        IExecutionContextAccessor contextAccessor)
+        : base(options, contextAccessor)
+    {
+    }
 
     public DbSet<User> Users { get; set; }
     public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
@@ -17,7 +22,6 @@ public sealed class AppDbContext : AuditDbContext
         modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-        {
             if (typeof(AuditableEntity).IsAssignableFrom(entityType.ClrType))
             {
                 var method = typeof(AppDbContext)
@@ -29,7 +33,6 @@ public sealed class AppDbContext : AuditDbContext
 
                 method.Invoke(null, [modelBuilder]);
             }
-        }
     }
 
     private static void SetSoftDeleteFilter<TEntity>(

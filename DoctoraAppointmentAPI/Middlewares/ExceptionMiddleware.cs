@@ -28,6 +28,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         {
             ValidationException => (HttpStatusCode.BadRequest, LogLevel.Warning),
             ConflictException or UserAlreadyExistsException => (HttpStatusCode.Conflict, LogLevel.Warning),
+            ForbiddenException => (HttpStatusCode.Forbidden, LogLevel.Warning),
             NotFoundException => (HttpStatusCode.NotFound, LogLevel.Warning),
             _ => (HttpStatusCode.InternalServerError, LogLevel.Error)
         };

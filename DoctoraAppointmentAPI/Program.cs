@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using ModelContextProtocol.AspNetCore;
 using System.Text;
 using DoctorAppointment.Service.MCPTools;
+using System.Text.Json.Nodes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "DoctorAppointment API", Version = "v1" });
+    c.MapType<TimeOnly>(() => new OpenApiSchema
+    {
+        Type = JsonSchemaType.String,
+        Format = "time",
+        Description = "Local time in HH:mm:ss format, without a timezone suffix.",
+        Example = JsonValue.Create("09:00:00")
+    });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
