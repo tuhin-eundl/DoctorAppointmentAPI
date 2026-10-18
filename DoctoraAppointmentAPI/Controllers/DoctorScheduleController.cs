@@ -32,13 +32,16 @@ public sealed class DoctorScheduleController : ControllerBase
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "An unspecified error occurred.")]
     public async Task<IActionResult> CreateSchedule([FromBody] DoctorScheduleDto request)
     {
-        if (!TryGetCurrentDoctorId(out var doctorId))
+        if (!TryGetCurrentUserId(out var doctorId))
         {
             return Unauthorized();
         }
 
         var schedule = await _doctorScheduleService.CreateScheduleAsync(doctorId, request);
-        return Ok(DoctorScheduleProfile.EntityToDto(schedule));
+        return CreatedAtAction(
+            nameof(GetSchedulesByDoctorId),
+            new { doctorId = doctorId },
+            DoctorScheduleProfile.EntityToDto(schedule));
     }
 
     [HttpGet]
@@ -64,19 +67,15 @@ public sealed class DoctorScheduleController : ControllerBase
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "An unspecified error occurred.")]
     public async Task<IActionResult> GetSchedulesByDoctorId(int doctorId)
     {
-        if (!TryGetCurrentDoctorId(out var authenticatedDoctorId))
-        {
-            return Unauthorized();
-        }
-
-        var schedules = await _doctorScheduleService.GetSchedulesByDoctorIdAsync(authenticatedDoctorId, doctorId);
+        var schedules = await _doctorScheduleService
+            .GetSchedulesByDoctorIdAsync(doctorId);
         return Ok(schedules.Select(DoctorScheduleProfile.EntityToDto).ToList());
     }
 
     [HttpGet("{scheduleId:int}")]
     [Authorize]
     [Produces("application/json")]
-    [SwaggerOperation("Returns a schedule owned by the authenticated doctor.")]
+    [SwaggerOperation("Returns a schedule.")]
     [SwaggerResponse((int)HttpStatusCode.OK, "Returns the requested schedule.", typeof(DoctorScheduleDto))]
     [SwaggerResponse((int)HttpStatusCode.Unauthorized, "The request has no valid authenticated doctor.")]
     [SwaggerResponse((int)HttpStatusCode.Forbidden, "The authenticated user is not a doctor.")]
@@ -84,13 +83,8 @@ public sealed class DoctorScheduleController : ControllerBase
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "An unspecified error occurred.")]
     public async Task<IActionResult> GetScheduleById(int scheduleId)
     {
-        if (!TryGetCurrentDoctorId(out var doctorId))
-        {
-            return Unauthorized();
-        }
-
-        var schedule = await _doctorScheduleService.GetScheduleByIdAsync(doctorId, scheduleId);
-        return Ok(DoctorScheduleProfile.EntityToDto(schedule));
+        var schedule = await _doctorScheduleService.GetScheduleByIdAsync(scheduleId);
+        return Ok(DoctorScheduleProfile.EntityToDto(schedule!));
     }
 
     [HttpPut("{scheduleId:int}")]
@@ -106,12 +100,7 @@ public sealed class DoctorScheduleController : ControllerBase
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "An unspecified error occurred.")]
     public async Task<IActionResult> UpdateSchedule(int scheduleId, [FromBody] UpdateDoctorScheduleDto request)
     {
-        if (!TryGetCurrentDoctorId(out var doctorId))
-        {
-            return Unauthorized();
-        }
-
-        var schedule = await _doctorScheduleService.UpdateScheduleAsync(doctorId, scheduleId, request);
+        var schedule = await _doctorScheduleService.UpdateScheduleAsync(scheduleId, request);
         return Ok(DoctorScheduleProfile.EntityToDto(schedule));
     }
 
@@ -126,7 +115,7 @@ public sealed class DoctorScheduleController : ControllerBase
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "An unspecified error occurred.")]
     public async Task<IActionResult> DeleteSchedule(int scheduleId)
     {
-        if (!TryGetCurrentDoctorId(out var doctorId))
+        if (!TryGetCurrentUserId(out var doctorId))
         {
             return Unauthorized();
         }
@@ -146,7 +135,7 @@ public sealed class DoctorScheduleController : ControllerBase
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "An unspecified error occurred.")]
     public async Task<IActionResult> DeleteScheduleDay(int scheduleId, int scheduleDayId)
     {
-        if (!TryGetCurrentDoctorId(out var doctorId))
+        if (!TryGetCurrentUserId(out var doctorId))
         {
             return Unauthorized();
         }
@@ -155,7 +144,7 @@ public sealed class DoctorScheduleController : ControllerBase
         return NoContent();
     }
 
-    private bool TryGetCurrentDoctorId(out int doctorId)
+    private bool TryGetCurrentUserId(out int doctorId)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub");

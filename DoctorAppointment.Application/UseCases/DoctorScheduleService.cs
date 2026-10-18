@@ -3,15 +3,18 @@ using DoctorAppointment.Application.DTOs.DoctorSchedule;
 using DoctorAppointment.Application.Exceptions;
 using DoctorAppointment.Domain;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace DoctorAppointment.Application.UseCases;
 
-public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctorScheduleService, IService<DoctorSchedule>
+public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctorScheduleService
 {
     private readonly IDoctorScheduleRepository _repository;
     private readonly IUserRepository _userRepository;
 
-    public DoctorScheduleService(IDoctorScheduleRepository repository, IUserRepository userRepository) : base(repository)
+    public DoctorScheduleService(
+        IDoctorScheduleRepository repository,
+        IUserRepository userRepository) : base(repository)
     {
         _repository = repository;
         _userRepository = userRepository;
@@ -49,27 +52,30 @@ public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctor
         return _repository.GetAllWithDaysAsync();
     }
 
-    public async Task<IReadOnlyList<DoctorSchedule>> GetSchedulesByDoctorIdAsync(int authenticatedDoctorId, int doctorId)
+    public async Task<IReadOnlyList<DoctorSchedule?>> GetSchedulesByDoctorIdAsync(int doctorId)
     {
-        await EnsureDoctorAsync(authenticatedDoctorId);
-        EnsureOwnDoctorId(authenticatedDoctorId, doctorId);
-
         return await _repository.GetByDoctorIdWithDaysAsync(doctorId);
     }
 
-    public async Task<DoctorSchedule> GetScheduleByIdAsync(int doctorId, int scheduleId)
+    public async Task<DoctorSchedule?> GetScheduleByIdAsync(
+        int scheduleId)
     {
-        await EnsureDoctorAsync(doctorId);
-        return await GetScheduleForDoctorAsync(doctorId, scheduleId);
+        return await _repository.Query()
+            .AsNoTracking()
+            .Include(s => s.ScheduleDays)
+            .FirstOrDefaultAsync(s => s.Id == scheduleId);
     }
 
-    public async Task<DoctorSchedule> UpdateScheduleAsync(int doctorId, int scheduleId, UpdateDoctorScheduleDto request)
+    public async Task<DoctorSchedule> UpdateScheduleAsync(int scheduleId, UpdateDoctorScheduleDto request)
     {
-        await EnsureDoctorAsync(doctorId);
         ValidateScheduleRequest(request.FromDate, request.ToDate, request.ScheduleDays);
 
-        var schedule = await GetScheduleForDoctorAsync(doctorId, scheduleId);
-        if (await _repository.HasOverlappingScheduleAsync(doctorId, request.FromDate, request.ToDate, scheduleId))
+        var schedule = await GetScheduleByIdAsync(scheduleId);
+        if(schedule == null)
+        {
+            throw new NotFoundException(nameof(DoctorSchedule), scheduleId);
+        }
+        if (await _repository.HasOverlappingScheduleAsync(schedule.DoctorId, request.FromDate, request.ToDate, scheduleId))
         {
             throw new ConflictException("A schedule already exists for one or more dates in this range.");
         }
@@ -119,6 +125,10 @@ public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctor
     {
         await EnsureDoctorAsync(doctorId);
         var schedule = await GetScheduleForDoctorAsync(doctorId, scheduleId);
+        if (schedule is null)
+        {
+            throw new NotFoundException(nameof(DoctorSchedule), scheduleId);
+        }
         var scheduleDay = schedule.ScheduleDays.SingleOrDefault(day => day.Id == scheduleDayId);
 
         if (scheduleDay is null)
@@ -126,15 +136,7 @@ public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctor
             throw new NotFoundException(nameof(DoctorScheduleDay), scheduleDayId);
         }
 
-        scheduleDay.IsDeleted = true;
-
-        if (!schedule.ScheduleDays.Any(day => !day.IsDeleted))
-        {
-            await _repository.DeleteAsync(schedule);
-            return;
-        }
-
-        await _repository.UpdateAsync(schedule);
+        await _repository.DeleteAsync(schedule);
     }
 
     private async Task EnsureDoctorAsync(int doctorId)
@@ -143,14 +145,6 @@ public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctor
         if (doctor is null || doctor.Role != UserRole.Doctor)
         {
             throw new ForbiddenException("Only users with the Doctor role can manage schedules.");
-        }
-    }
-
-    private static void EnsureOwnDoctorId(int authenticatedDoctorId, int requestedDoctorId)
-    {
-        if (authenticatedDoctorId != requestedDoctorId)
-        {
-            throw new ForbiddenException("Doctors can only access their own schedules.");
         }
     }
 
