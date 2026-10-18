@@ -17,19 +17,21 @@ public abstract class AuditDbContext : DbContext
         CancellationToken cancellationToken = default)
     {
         var username = _contextAccessor.UserName;
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>()
                      .Where(e => e.State is EntityState.Added
                          or EntityState.Modified))
         {
-            entry.Entity.UpdatedAt = now;
-            entry.Entity.UpdatedBy = username;
-
             if (entry.State == EntityState.Added)
             {
                 entry.Entity.CreatedAt = now;
                 entry.Entity.CreatedBy = username;
+            }
+            else
+            {
+                entry.Entity.UpdatedAt = now;
+                entry.Entity.UpdatedBy = username;
             }
         }
 
