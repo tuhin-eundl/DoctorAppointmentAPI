@@ -47,7 +47,11 @@ public sealed class UserController : ControllerBase
     public async Task<IActionResult> GetUserById(int id)
     {
         var user = await _userService.GetAsync(id);
-        return Ok(user);
+        if(user == null)
+        {
+            return NotFound();
+        }
+        return Ok(UserProfiles.EntityToDto(user));
     }
 
     [HttpPost]
@@ -68,7 +72,10 @@ public sealed class UserController : ControllerBase
 
         var userEntity = UserProfiles.DtoToEntity(user);
         var createdUser = await _userService.AddAsync(userEntity);
-        return CreatedAtAction(nameof(CreateUser), UserProfiles.EntityToDto(createdUser));
+        return CreatedAtAction(
+            nameof(GetUserById),
+            new { id = createdUser.Id },
+            UserProfiles.EntityToDto(createdUser));
     }
 
     [HttpPut("{id}")]

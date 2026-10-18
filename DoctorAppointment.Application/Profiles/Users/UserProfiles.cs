@@ -33,7 +33,7 @@ public static class UserProfiles
             user.LastName,
             user.Title,
             user.Username,
-            user.Password,
+            null,
             user.Email,
             user.Age,
             user.Gender,
