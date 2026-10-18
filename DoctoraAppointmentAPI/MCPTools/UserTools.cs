@@ -1,6 +1,5 @@
 ﻿using ModelContextProtocol.Server;
 using System.ComponentModel;
-using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace DoctorAppointment.Service.MCPTools;
@@ -10,33 +9,17 @@ public sealed class UserTools(
     IHttpClientFactory httpClientFactory,
     IHttpContextAccessor httpContextAccessor)
 {
-    private HttpClient CreateClient()
-    {
-        var client = httpClientFactory.CreateClient("DoctorAppointmentApi");
-
-        var authorization = httpContextAccessor.HttpContext?
-            .Request.Headers.Authorization.ToString();
-
-        if (AuthenticationHeaderValue.TryParse(
-                authorization, out var header)
-            && header.Scheme.Equals(
-                "Bearer", StringComparison.OrdinalIgnoreCase))
-        {
-            client.DefaultRequestHeaders.Authorization = header;
-        }
-
-        return client;
-    }
+    private const string BasePath = "/api/user";
 
     [McpServerTool]
     [Description("Returns a list of all users.")]
     public async Task<JsonElement> GetAllUsers(
         CancellationToken cancellationToken)
     {
-        var client = CreateClient();
+        var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.GetAsync(
-            "/api/user",
+            BasePath,
             cancellationToken);
 
         response.EnsureSuccessStatusCode();
@@ -51,10 +34,10 @@ public sealed class UserTools(
         [Description("The ID of the user to retrieve")] int id,
         CancellationToken cancellationToken)
     {
-        var client = CreateClient();
+        var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.GetAsync(
-            $"/api/user/{id}",
+            $"{BasePath}/{id}",
             cancellationToken);
 
         response.EnsureSuccessStatusCode();
@@ -69,10 +52,10 @@ public sealed class UserTools(
         [Description("The user data as JSON")] JsonElement user,
         CancellationToken cancellationToken)
     {
-        var client = CreateClient();
+        var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.PostAsJsonAsync(
-            "/api/user",
+            BasePath,
             user,
             cancellationToken);
 
@@ -89,10 +72,10 @@ public sealed class UserTools(
         [Description("The updated user data as JSON")] JsonElement user,
         CancellationToken cancellationToken)
     {
-        var client = CreateClient();
+        var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.PutAsJsonAsync(
-            $"/api/user/{id}",
+            $"{BasePath}/{id}",
             user,
             cancellationToken);
 
@@ -108,10 +91,10 @@ public sealed class UserTools(
         [Description("The ID of the user to delete")] int id,
         CancellationToken cancellationToken)
     {
-        var client = CreateClient();
+        var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.DeleteAsync(
-            $"/api/user/{id}",
+            $"{BasePath}/{id}",
             cancellationToken);
 
         response.EnsureSuccessStatusCode();

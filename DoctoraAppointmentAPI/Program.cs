@@ -62,7 +62,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = JsonSchemaType.String,
         Format = "time",
         Description = "Local time in HH:mm:ss format, without a timezone suffix.",
-        Example = JsonValue.Create("09:00:00")
+        Examples = [JsonValue.Create("09:00:00")]
     });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -89,7 +89,8 @@ builder.Services
     {
         options.SessionMode = HttpServerSessionMode.Stateless;
     })
-    .WithTools<UserTools>();
+    .WithTools<UserTools>()
+    .WithTools<DoctorScheduleTools>();
 
 var app = builder.Build();
 
