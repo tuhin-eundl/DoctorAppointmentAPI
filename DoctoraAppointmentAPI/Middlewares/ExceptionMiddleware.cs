@@ -3,7 +3,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 
-public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+namespace DoctorAppointment.Service.Middlewares;
+
+public class ExceptionMiddleware(
+    RequestDelegate next,
+    ILogger<ExceptionMiddleware> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
