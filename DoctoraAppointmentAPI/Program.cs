@@ -208,7 +208,12 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-app.UseHttpsRedirection();
+// In Development the clients talk to the API over plain HTTP on localhost. Redirecting to HTTPS sends
+// the browser to a different origin (port 7178), which drops the Authorization header and returns 401.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
