@@ -16,6 +16,7 @@ public sealed class AppDbContext : AuditDbContext
     public DbSet<User> Users { get; set; }
     public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
     public DbSet<DoctorScheduleDay> DoctorScheduleDays { get; set; }
+    public DbSet<Hospital> Hospitals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

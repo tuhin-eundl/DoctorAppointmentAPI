@@ -14,10 +14,14 @@ namespace DoctorAppointment.Service.Controllers;
 public sealed class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IHospitalService _hospitalService;
 
-    public UserController(IUserService userService)
+    public UserController(
+        IUserService userService,
+        IHospitalService hospitalService)
     {
         _userService = userService;
+        _hospitalService = hospitalService;
     }
 
     [HttpGet]
@@ -46,7 +50,7 @@ public sealed class UserController : ControllerBase
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
     public async Task<IActionResult> GetUserById(int id)
     {
-        var user = await _userService.GetAsync(id);
+        var user = await _userService.GetUserAsync(id);
         if(user == null)
         {
             return NotFound();
@@ -57,12 +61,12 @@ public sealed class UserController : ControllerBase
     [HttpPost]
     [Produces("application/json")]
     [SwaggerOperation("Creates a new user.")]
-    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the created user.", typeof(UserDto))]
+    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the created user.", typeof(CreateUserDto))]
     [SwaggerResponse((int)HttpStatusCode.NotFound, "Returned if the user does not exist.")]
     [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
     [SwaggerResponse((int)HttpStatusCode.Forbidden, "Returned if the user doesn't have the correct permissions to execute the action.")]
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
-    public async Task<IActionResult> CreateUser([FromBody] UserDto user)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserDto user)
     {
         var errors = UserDtoValidation.IsValid(user);
         if (errors.Any())
@@ -71,6 +75,15 @@ public sealed class UserController : ControllerBase
         }
 
         var userEntity = UserProfiles.DtoToEntity(user);
+
+        if(user.HospitalIds.Count > 0)
+        {
+            var hospitals = await Task.WhenAll(
+                user.HospitalIds.Select(id => _hospitalService.GetAsync(id ?? 0))
+            );
+            userEntity.Hospitals = hospitals.Where(h => h != null).ToList();
+        }
+
         var createdUser = await _userService.AddAsync(userEntity);
         return CreatedAtAction(
             nameof(GetUserById),
@@ -82,17 +95,25 @@ public sealed class UserController : ControllerBase
     [Authorize]
     [Produces("application/json")]
     [SwaggerOperation("Modify a specific user.")]
-    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the modified user.", typeof(UserDto))]
+    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the modified user.", typeof(CreateUserDto))]
     [SwaggerResponse((int)HttpStatusCode.NotFound, "Returned if the user does not exist.")]
     [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
     [SwaggerResponse((int)HttpStatusCode.Forbidden, "Returned if the user doesn't have the correct permissions to execute the action.")]
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto user)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto user)
     {
-        var existingUser = await _userService.GetAsync(id);
+        var existingUser = await _userService.GetUserAsync(id);
         if (existingUser == null)
         {
             return NotFound();
+        }
+
+        if(user.HospitalIds.Count > 0)
+        {
+            var hospitals = await Task.WhenAll(
+                user.HospitalIds.Select(id => _hospitalService.GetAsync(id ?? 0))
+            );
+            existingUser.Hospitals = hospitals.Where(h => h != null).ToList();
         }
 
         var updatedUser = await _userService.UpdateAsync(existingUser);

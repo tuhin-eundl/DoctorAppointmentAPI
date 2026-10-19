@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DoctorAppointment.Application.UseCases;
 
-public sealed class UserService : BaseService<User>, IUserService, IService<User>
+public sealed class UserService : BaseService<User>, IUserService
 {
     private readonly IUserRepository _repository;
     private readonly PasswordHasher<User> _passwordHasher = new();
@@ -20,7 +20,13 @@ public sealed class UserService : BaseService<User>, IUserService, IService<User
 
     public async Task<IReadOnlyList<UserDto?>> ListAsync()
     {
-        var users = await _repository.ListAsync();
+        var query = _repository.Query()
+            .AsNoTracking()
+            .Include(u => u.Hospitals);
+
+        var users = await query
+            .ToListAsync();
+
         return users
             .Select(UserProfiles.EntityToDto)
             .ToList();
@@ -83,7 +89,7 @@ public sealed class UserService : BaseService<User>, IUserService, IService<User
     {
         var query = _repository.Query()
             .Where(u => u.Username == username ||
-                        (email != null && u.Email == email));
+                        ((email != null || email != string.Empty) && u.Email == email));
 
         if (id.HasValue)
         {
@@ -92,5 +98,11 @@ public sealed class UserService : BaseService<User>, IUserService, IService<User
 
         return await query.AnyAsync();
 
+    }
+
+    public async Task<User?> GetUserAsync(int id)
+    {
+        var query = _repository.Query().Include(u => u.Hospitals);
+        return await query.FirstOrDefaultAsync(u => u.Id == id);
     }
 }

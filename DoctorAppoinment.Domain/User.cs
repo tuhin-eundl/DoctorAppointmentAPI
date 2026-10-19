@@ -20,6 +20,7 @@ public sealed class User : AuditableEntity
     public UserRole Role { get; set; }
     public Department? Department { get; set; } = null;
     public ICollection<DoctorSchedule> DoctorSchedules { get; set; } = [];
+    public ICollection<Hospital> Hospitals { get; set; } = [];
 }
 
 public enum UserRole

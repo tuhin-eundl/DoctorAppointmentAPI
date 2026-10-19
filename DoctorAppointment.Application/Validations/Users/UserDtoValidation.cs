@@ -5,7 +5,7 @@ namespace DoctorAppointment.Application.Validations.Users;
 
 public static class UserDtoValidation
 {
-    public static IReadOnlyList<string> IsValid(UserDto userDto)
+    public static IReadOnlyList<string> IsValid(CreateUserDto userDto)
     {
         var errors = new List<string>();
 

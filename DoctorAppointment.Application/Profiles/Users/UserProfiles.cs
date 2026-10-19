@@ -1,11 +1,12 @@
-﻿using DoctorAppointment.Application.DTOs.Users;
+﻿using DoctorAppointment.Application.DTOs.Hospital;
+using DoctorAppointment.Application.DTOs.Users;
 using DoctorAppointment.Domain;
 
 namespace DoctorAppointment.Application.Profiles.Users;
 
 public static class UserProfiles
 {
-    public static User DtoToEntity(UserDto userDto)
+    public static User DtoToEntity(CreateUserDto userDto)
     {
         return new User
         {
@@ -21,7 +22,10 @@ public static class UserProfiles
             Role = Enum.Parse<UserRole>(userDto.Role, ignoreCase: true),
             Department = userDto.Department is null
                 ? Department.NA
-                : Enum.Parse<Department>(userDto.Department, ignoreCase: true)
+                : Enum.Parse<Department>(userDto.Department, ignoreCase: true),
+            Hospitals = userDto.HospitalIds is null
+                ? new List<Hospital>()
+                : userDto.HospitalIds.Select(id => new Hospital { Id = userDto.Id }).ToList()
         };
     }
 
@@ -38,7 +42,14 @@ public static class UserProfiles
             user.Age,
             user.Gender,
             user.Role.ToString(),
-            user.Department.ToString()
+            user.Department.ToString(),
+            user.Hospitals.Select(hospital => new HospitalDto(
+                hospital.Id,
+                hospital.Name,
+                hospital.Address,
+                hospital.Longitude,
+                hospital.Latitude
+            )).ToList()
         );
 
     }
