@@ -4,6 +4,8 @@ public record DoctorScheduleDto(
     DateOnly FromDate,
     DateOnly ToDate,
     ICollection<DoctorScheduleDayDto> ScheduleDays,
-    int? ScheduleId = null
+    int? ScheduleId = null,
+    int MaxAppointmentsPerDay = 20,
+    int AverageAppointmentMinutes = 15
 );
 

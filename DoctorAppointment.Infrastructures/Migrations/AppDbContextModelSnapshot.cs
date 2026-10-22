@@ -22,6 +22,71 @@ namespace DoctorAppointment.Infrastructures.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DoctorAppointment.Domain.Appointment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("AppointmentDate")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("CancelledById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ScheduleDayId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SerialNumber")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId", "AppointmentDate");
+
+                    b.HasIndex("ScheduleDayId", "SerialNumber")
+                        .IsUnique()
+                        .HasFilter("[Status] IN (0, 1) AND [IsDeleted] = 0");
+
+                    b.ToTable("Appointments");
+                });
+
             modelBuilder.Entity("DoctorAppointment.Domain.DoctorSchedule", b =>
                 {
                     b.Property<int>("Id")
@@ -29,6 +94,11 @@ namespace DoctorAppointment.Infrastructures.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AverageAppointmentMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(15);
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -46,6 +116,11 @@ namespace DoctorAppointment.Infrastructures.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int>("MaxAppointmentsPerDay")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(20);
+
                     b.Property<DateOnly>("ToDate")
                         .HasColumnType("date");
 
@@ -59,7 +134,7 @@ namespace DoctorAppointment.Infrastructures.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("DoctorSchedules", (string)null);
+                    b.ToTable("DoctorSchedules");
                 });
 
             modelBuilder.Entity("DoctorAppointment.Domain.DoctorScheduleDay", b =>
@@ -102,7 +177,7 @@ namespace DoctorAppointment.Infrastructures.Migrations
 
                     b.HasIndex("DoctorScheduleId");
 
-                    b.ToTable("DoctorScheduleDays", (string)null);
+                    b.ToTable("DoctorScheduleDays");
                 });
 
             modelBuilder.Entity("DoctorAppointment.Domain.Hospital", b =>
@@ -144,7 +219,7 @@ namespace DoctorAppointment.Infrastructures.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Hospitals", (string)null);
+                    b.ToTable("Hospitals");
                 });
 
             modelBuilder.Entity("DoctorAppointment.Domain.User", b =>
@@ -213,7 +288,7 @@ namespace DoctorAppointment.Infrastructures.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("HospitalUser", b =>
@@ -228,7 +303,34 @@ namespace DoctorAppointment.Infrastructures.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("HospitalUser", (string)null);
+                    b.ToTable("HospitalUser");
+                });
+
+            modelBuilder.Entity("DoctorAppointment.Domain.Appointment", b =>
+                {
+                    b.HasOne("DoctorAppointment.Domain.User", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DoctorAppointment.Domain.User", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DoctorAppointment.Domain.DoctorScheduleDay", "ScheduleDay")
+                        .WithMany()
+                        .HasForeignKey("ScheduleDayId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("ScheduleDay");
                 });
 
             modelBuilder.Entity("DoctorAppointment.Domain.DoctorSchedule", b =>

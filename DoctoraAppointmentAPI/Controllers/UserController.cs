@@ -76,10 +76,10 @@ public sealed class UserController : ControllerBase
 
         var userEntity = UserProfiles.DtoToEntity(user);
 
-        if(user.HospitalIds.Count > 0)
+        if(user.HospitalIds != null && user.HospitalIds.Any())
         {
             var hospitals = await Task.WhenAll(
-                user.HospitalIds.Select(id => _hospitalService.GetAsync(id ?? 0))
+                user.HospitalIds.Select(id => _hospitalService.GetAsync(id))
             );
             userEntity.Hospitals = hospitals.Where(h => h != null).ToList();
         }
@@ -111,7 +111,7 @@ public sealed class UserController : ControllerBase
         if(user.HospitalIds.Count > 0)
         {
             var hospitals = await Task.WhenAll(
-                user.HospitalIds.Select(id => _hospitalService.GetAsync(id ?? 0))
+                user.HospitalIds.Select(id => _hospitalService.GetAsync(id))
             );
             existingUser.Hospitals = hospitals.Where(h => h != null).ToList();
         }

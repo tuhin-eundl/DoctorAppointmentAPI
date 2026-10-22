@@ -14,6 +14,8 @@ public static class DoctorScheduleProfile
                 .Where(day => !day.IsDeleted)
                 .Select(day => new DoctorScheduleDayDto(day.ScheduleDate, day.StartTime, day.EndTime, day.Id))
                 .ToList(),
-            schedule.Id);
+            schedule.Id,
+            schedule.MaxAppointmentsPerDay,
+            schedule.AverageAppointmentMinutes);
     }
 }

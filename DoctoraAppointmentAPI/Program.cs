@@ -66,65 +66,13 @@ builder.Services.AddTransient<Kernel>(sp =>
     var kernelBuilder = Kernel.CreateBuilder();
 
     // 1. Configure custom OpenAI endpoint options
-    // Determine the correct base to give the OpenAI client. Some providers
-    // (OpenRouter) serve under /api/v1 while the SDK appends /v1 itself. If the
-    // configured aiEndpoint contains an /api path, use origin + "/api" so the
-    // SDK ends up calling /api/v1. Otherwise use the origin and let the SDK
-    // append /v1.
-    Uri endpointUri = new Uri(aiEndpoint);
-    var origin = new Uri(endpointUri.GetLeftPart(UriPartial.Authority));
-
-    string baseForClient;
-    if (endpointUri.AbsolutePath.Contains("/api", StringComparison.OrdinalIgnoreCase))
-    {
-        baseForClient = new Uri(origin, "api/").ToString().TrimEnd('/'); // https://openrouter.ai/api
-    }
-    else
-    {
-        baseForClient = origin.ToString().TrimEnd('/'); // https://openrouter.ai
-    }
-
+    // The OpenAI SDK uses the endpoint as the full base URL and only appends
+    // "/chat/completions", so it must include the version path
+    // (e.g. https://openrouter.ai/api/v1).
     var openAiClientOptions = new OpenAIClientOptions
     {
-        Endpoint = new Uri(baseForClient)
+        Endpoint = new Uri(aiEndpoint)
     };
-
-    // Quick connectivity check: try a few common model endpoints on the chosen
-    // base so we can surface a clear error if the remote path differs from the
-    // SDK expectations (this often causes 404s with proxy providers).
-    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("OpenAIEndpointTest");
-    using (var http = new HttpClient { BaseAddress = new Uri(baseForClient) })
-    {
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", aiApiKey);
-
-        var endpointsToTry = new[] { "v1/models", "models" };
-        var lastStatus = new List<string>();
-        bool ok = false;
-        foreach (var path in endpointsToTry)
-        {
-            try
-            {
-                var resp = http.GetAsync(path).GetAwaiter().GetResult();
-                lastStatus.Add($"{new Uri(http.BaseAddress, path)} -> {(int)resp.StatusCode} {resp.ReasonPhrase}");
-                if (resp.IsSuccessStatusCode)
-                {
-                    logger.LogInformation("OpenAI endpoint check succeeded for {Path}", path);
-                    ok = true;
-                    break;
-                }
-            }
-            catch (Exception ex)
-            {
-                lastStatus.Add($"{new Uri(http.BaseAddress, path)} -> EX: {ex.Message}");
-            }
-        }
-
-        if (!ok)
-        {
-            logger.LogError("OpenAI endpoint connectivity check failed. Tried: {Tried}.", string.Join(';', lastStatus));
-            throw new InvalidOperationException($"OpenAI endpoint did not respond successfully. Tried: {string.Join(';', lastStatus)}");
-        }
-    }
 
     // 2. Create the OpenAI client pointing to the custom endpoint
     var openAiClient = new OpenAIClient(new ApiKeyCredential(aiApiKey), openAiClientOptions);

@@ -89,7 +89,7 @@ public sealed class UserService : BaseService<User>, IUserService
     {
         var query = _repository.Query()
             .Where(u => u.Username == username ||
-                        ((email != null || email != string.Empty) && u.Email == email));
+                        (!string.IsNullOrEmpty(email) && u.Email == email));
 
         if (id.HasValue)
         {

@@ -14,7 +14,7 @@ public record CreateUserDto(
     string? Gender,
     string Role,
     string? Department,
-    List<int?> HospitalIds);
+    List<int>? HospitalIds);
 
 public record UserDto(
     int Id,
@@ -28,5 +28,5 @@ public record UserDto(
     string? Gender,
     string Role,
     string? Department,
-    List<HospitalDto?> Hospitals);
+    List<HospitalDto>? Hospitals);
 
