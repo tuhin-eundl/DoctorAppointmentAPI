@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Headers;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 
 namespace DoctorAppointment.Service.MCPTools;
 
@@ -27,8 +29,8 @@ public static class HttpHandler
             }
         }
 
-        var authorization = httpContextAccessor.HttpContext?
-            .Request.Headers.Authorization.ToString();
+        // Forward the caller's bearer token so every internal request runs as the authorized user.
+        var authorization = httpContext?.Request.Headers.Authorization.ToString();
 
         if (AuthenticationHeaderValue.TryParse(
                 authorization, out var header)
@@ -39,6 +41,37 @@ public static class HttpHandler
         }
 
         return client;
+    }
+
+    /// <summary>
+    /// Reads the authenticated caller's user ID from the validated token claims.
+    /// </summary>
+    public static int? GetCurrentUserId(IHttpContextAccessor httpContextAccessor)
+    {
+        var user = httpContextAccessor.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            return null;
+        }
+
+        var sub = user.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? user.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        return int.TryParse(sub, out var userId) ? userId : null;
+    }
+
+    public static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        throw new HttpRequestException(
+            $"API returned {(int)response.StatusCode} ({response.StatusCode}): {body}",
+            null,
+            response.StatusCode);
     }
 }
 

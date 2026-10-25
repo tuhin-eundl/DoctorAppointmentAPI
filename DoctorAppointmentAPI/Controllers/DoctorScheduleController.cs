@@ -45,7 +45,7 @@ public sealed class DoctorScheduleController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    //[Authorize]
     [Produces("application/json")]
     [SwaggerOperation("Returns all doctor schedules to any authenticated user.")]
     [SwaggerResponse((int)HttpStatusCode.OK, "Returns all doctor schedules.", typeof(IEnumerable<DoctorScheduleDto>))]
@@ -58,7 +58,7 @@ public sealed class DoctorScheduleController : ControllerBase
     }
 
     [HttpGet("doctor/{doctorId:int}")]
-    [Authorize]
+    //[Authorize]
     [Produces("application/json")]
     [SwaggerOperation("Returns schedules belonging to the authenticated doctor.")]
     [SwaggerResponse((int)HttpStatusCode.OK, "Returns schedules for the doctor.", typeof(IEnumerable<DoctorScheduleDto>))]
@@ -73,7 +73,7 @@ public sealed class DoctorScheduleController : ControllerBase
     }
 
     [HttpGet("{scheduleId:int}")]
-    [Authorize]
+    //[Authorize]
     [Produces("application/json")]
     [SwaggerOperation("Returns a schedule.")]
     [SwaggerResponse((int)HttpStatusCode.OK, "Returns the requested schedule.", typeof(DoctorScheduleDto))]

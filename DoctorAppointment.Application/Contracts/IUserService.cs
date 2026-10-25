@@ -9,4 +9,5 @@ public interface IUserService : IService<User>
     Task<UserDto?> IsValidUser(string username, string password);
     Task<bool> UserExistsAsync(string username, string? email, int? id);
     Task<User?> GetUserAsync(int id);
+    Task<IReadOnlyList<DoctorWithScheduleDto>> GetDoctorsWithScheduleAsync(string? department);
 }

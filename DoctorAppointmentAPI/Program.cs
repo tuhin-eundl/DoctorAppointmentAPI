@@ -7,7 +7,6 @@ using Microsoft.OpenApi;
 using Microsoft.SemanticKernel;
 using ModelContextProtocol.AspNetCore;
 using OpenAI;
-using System.Net.Http.Headers;
 using System.ClientModel;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -19,6 +18,8 @@ builder.Services.AddHttpContextAccessor();
 
 // Register MCP tools so they are available for DI when building the Kernel
 builder.Services.AddTransient<UserTools>();
+builder.Services.AddTransient<AppointmentTools>();
+builder.Services.AddTransient<DoctorScheduleTools>();
 
 builder.Services.AddHttpClient("DoctorAppointmentApi", client =>
 {
@@ -57,8 +58,9 @@ builder.Services.AddAuthentication(options =>
 
 // Read AI Settings
 var aiApiKey = builder.Configuration["AiSettings:ApiKey"] ?? throw new ArgumentNullException("ApiKey missing");
-var aiModelId = builder.Configuration["AiSettings:ModelId"] ?? "meta-llama/llama-3.3-70b-instruct:free";
 var aiEndpoint = builder.Configuration["AiSettings:Endpoint"] ?? "https://openrouter.ai/api/v1";
+var aiModelId = builder.Configuration["AiSettings:ModelId"]
+    ?? throw new InvalidOperationException("AiSettings:ModelId is not configured");
 
 // Configure Semantic Kernel with Custom OpenAI Endpoint
 builder.Services.AddTransient<Kernel>(sp =>
@@ -86,6 +88,12 @@ builder.Services.AddTransient<Kernel>(sp =>
     // Register your tool plugin
     var userTools = sp.GetRequiredService<UserTools>();
     kernelBuilder.Plugins.AddFromObject(userTools, pluginName: "UserManagement");
+
+    var appointmentTools = sp.GetRequiredService<AppointmentTools>();
+    kernelBuilder.Plugins.AddFromObject(appointmentTools, pluginName: "Appointments");
+
+    var doctorScheduleTools = sp.GetRequiredService<DoctorScheduleTools>();
+    kernelBuilder.Plugins.AddFromObject(doctorScheduleTools, pluginName: "DoctorSchedules");
 
     return kernelBuilder.Build();
 });
@@ -144,7 +152,8 @@ builder.Services
         options.SessionMode = HttpServerSessionMode.Stateless;
     })
     .WithTools<UserTools>()
-    .WithTools<DoctorScheduleTools>();
+    .WithTools<DoctorScheduleTools>()
+    .WithTools<AppointmentTools>();
 
 var app = builder.Build();
 

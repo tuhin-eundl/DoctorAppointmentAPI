@@ -25,7 +25,7 @@ public sealed class UserController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    //[Authorize]
     [Produces("application/json")]
     [SwaggerOperation("Returns a list of all users.")]
     [SwaggerResponse((int)HttpStatusCode.OK, "Returns the list of users.", typeof(IEnumerable<UserDto>))]
@@ -37,6 +37,20 @@ public sealed class UserController : ControllerBase
     {
         var users = await _userService.ListAsync();
         return Ok(users);
+    }
+
+    [HttpGet("doctors-with-schedule")]
+    [Authorize]
+    [Produces("application/json")]
+    [SwaggerOperation("Returns doctors that have upcoming schedules, including their schedule days.")]
+    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the doctors with their upcoming schedules.", typeof(IEnumerable<DoctorWithScheduleDto>))]
+    [SwaggerResponse((int)HttpStatusCode.BadRequest, "Returned if the department is invalid.")]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
+    [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
+    public async Task<IActionResult> GetDoctorsWithSchedule([FromQuery] string? department = null)
+    {
+        var doctors = await _userService.GetDoctorsWithScheduleAsync(department);
+        return Ok(doctors);
     }
 
     [HttpGet("{id}")]
