@@ -25,7 +25,7 @@ public sealed class UserController : ControllerBase
     }
 
     [HttpGet]
-    //[Authorize]
+    [Authorize]
     [Produces("application/json")]
     [SwaggerOperation("Returns a list of all users.")]
     [SwaggerResponse((int)HttpStatusCode.OK, "Returns the list of users.", typeof(IEnumerable<UserDto>))]
