@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="DoctoraAppointmentAPI/DoctorAppointment.Service.csproj" />
+  <Project Path="DoctorAppointmentAPI/DoctorAppointment.Service.csproj" />
   <Project Path="DoctorAppoinment.Domain/DoctorAppointment.Domain.csproj" />
   <Project Path="DoctorAppointment.Application/DoctorAppointment.Application.csproj" />
   <Project Path="DoctorAppointment.Infrastructures/DoctorAppointment.Infrastructures.csproj" />
