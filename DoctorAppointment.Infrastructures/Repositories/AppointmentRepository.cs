@@ -75,11 +75,10 @@ public sealed class AppointmentRepository : BaseRepository<Appointment>, IAppoin
             .GroupBy(a => a.ScheduleDayId)
             .ToDictionaryAsync(g => g.Key, g => g.Count());
 
-    public Task<bool> PatientHasActiveAppointmentAsync(int patientId, int doctorId, DateOnly date, TimeOnly startTime) =>
-        _db.Appointments.AnyAsync(a =>
+    public Task<Appointment?> GetPatientActiveAppointmentAtAsync(int patientId, DateOnly date, TimeOnly startTime) =>
+        WithDetails().FirstOrDefaultAsync(a =>
             a.PatientId == patientId &&
-            a.DoctorId == doctorId &&
-            a.AppointmentDate == date && 
+            a.AppointmentDate == date &&
             a.StartTime == startTime &&
             ActiveStatuses.Contains(a.Status));
 }

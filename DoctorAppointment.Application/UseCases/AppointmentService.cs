@@ -200,9 +200,13 @@ public sealed class AppointmentService : IAppointmentService
             throw new ValidationException("That time has already passed. Please pick a later time.");
         }
 
-        if (await _repository.PatientHasActiveAppointmentAsync(patientId, target.DoctorId, target.Day.ScheduleDate, request.StartTime))
+        var existing = await _repository.GetPatientActiveAppointmentAtAsync(patientId, target.Day.ScheduleDate, request.StartTime);
+        if (existing is not null)
         {
-            throw new ConflictException("You already have an appointment with this doctor on that day.");
+            var doctorName = existing.Doctor is null ? "another doctor" : $"Dr. {FullName(existing.Doctor)}";
+            throw new ConflictException(
+                $"You already have a {existing.Status.ToString().ToLowerInvariant()} appointment with {doctorName} " +
+                $"on {When(target.Day.ScheduleDate, request.StartTime)}. Please pick a different time or cancel that appointment first.");
         }
 
         var taken = (await TakenSlotsAsync([target])).GetValueOrDefault(target.Day.Id) ?? [];

@@ -19,5 +19,5 @@ public interface IAppointmentRepository : IBaseRepository<Appointment>
     Task<List<Appointment>> GetPendingInSlotAsync(int scheduleDayId, int serialNumber, int exceptId);
     /// <summary>Number of Pending or Approved appointments per schedule day.</summary>
     Task<Dictionary<int, int>> CountActiveByDayAsync(IReadOnlyCollection<int> scheduleDayIds);
-    Task<bool> PatientHasActiveAppointmentAsync(int patientId, int doctorId, DateOnly date, TimeOnly startTime);
+    Task<Appointment?> GetPatientActiveAppointmentAtAsync(int patientId, DateOnly date, TimeOnly startTime);
 }
