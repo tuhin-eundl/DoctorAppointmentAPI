@@ -222,6 +222,35 @@ namespace DoctorAppointment.Infrastructures.Migrations
                     b.ToTable("Hospitals");
                 });
 
+            modelBuilder.Entity("DoctorAppointment.Domain.Notification", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead", "CreatedAt");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("DoctorAppointment.Domain.User", b =>
                 {
                     b.Property<int>("Id")
@@ -353,6 +382,15 @@ namespace DoctorAppointment.Infrastructures.Migrations
                         .IsRequired();
 
                     b.Navigation("DoctorSchedule");
+                });
+
+            modelBuilder.Entity("DoctorAppointment.Domain.Notification", b =>
+                {
+                    b.HasOne("DoctorAppointment.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HospitalUser", b =>

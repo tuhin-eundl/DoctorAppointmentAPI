@@ -44,6 +44,21 @@ public sealed class UserTools(
 {
     private const string BasePath = "/api/user";
 
+    [KernelFunction, Description(
+        "Returns the signed-in user you are working for: id, name, username, email, age, gender, department and " +
+        "userType (\"Doctor\" or \"Patient\"). Call this FIRST in every conversation to know who the user is and " +
+        "which actions they may perform (Patients book appointments; Doctors manage schedules and approve/decline appointments).")]
+    [McpServerTool]
+    public async Task<JsonElement> GetCurrentUser(CancellationToken cancellationToken = default)
+    {
+        var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
+
+        using var response = await client.GetAsync($"{BasePath}/me", cancellationToken);
+        await HttpHandler.EnsureSuccessAsync(response, cancellationToken);
+
+        return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+    }
+
     [KernelFunction, Description("Returns a list of all registered system users.")]
     [McpServerTool]
     public async Task<List<UserDto>> GetAllUsers(CancellationToken cancellationToken = default)

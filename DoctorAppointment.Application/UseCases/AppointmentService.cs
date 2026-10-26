@@ -16,15 +16,18 @@ public sealed class AppointmentService : IAppointmentService
     private readonly IAppointmentRepository _repository;
     private readonly IDoctorScheduleRepository _scheduleRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationRepository _notificationRepository;
 
     public AppointmentService(
         IAppointmentRepository repository,
         IDoctorScheduleRepository scheduleRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        INotificationRepository notificationRepository)
     {
         _repository = repository;
         _scheduleRepository = scheduleRepository;
         _userRepository = userRepository;
+        _notificationRepository = notificationRepository;
     }
 
     private sealed record BookableDay(DoctorScheduleDay Day, int DoctorId, int Capacity, int SlotMinutes);
@@ -196,9 +199,10 @@ public sealed class AppointmentService : IAppointmentService
                 $"{TimeSlots.Format(request.StartTime)} is already booked. {NearbyFreeTimes(slots, request.StartTime)}");
         }
 
+        Appointment booked;
         try
         {
-            var appointment = await _repository.AddAsync(new Appointment
+            booked = await _repository.AddAsync(new Appointment
             {
                 PatientId = patientId,
                 DoctorId = target.DoctorId,
@@ -209,7 +213,6 @@ public sealed class AppointmentService : IAppointmentService
                 Status = AppointmentStatus.Pending,
                 Reason = reason
             });
-            return (await _repository.GetWithDetailsAsync(appointment.Id))!;
         }
         catch (DbUpdateException ex)
         {
@@ -217,6 +220,17 @@ public sealed class AppointmentService : IAppointmentService
             throw new ConflictException(
                 $"Someone just booked {TimeSlots.Format(request.StartTime)}. Please pick another time.", ex);
         }
+
+        var patientName = $"{patient.FirstName} {patient.LastName}".Trim();
+        await _notificationRepository.AddAsync(new Notification
+        {
+            UserId = target.DoctorId,
+            Message = $"An appointment of {patientName} on {target.Day.ScheduleDate:dd MMM yyyy} at " +
+                      $"{TimeSlots.Format(request.StartTime)} is waiting for your approval.",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        return (await _repository.GetWithDetailsAsync(booked.Id))!;
     }
 
     public async Task<IReadOnlyList<Appointment>> GetForUserAsync(int userId)

@@ -39,6 +39,8 @@ public class AgentController : ControllerBase
             CreateSchedule or UpdateSchedule with a date range and one daily start/end time (only use dayOverrides for days
             with different hours), DeleteScheduleDay for a single day off, and DeleteSchedule for a whole schedule.
             The user is already signed in; every tool runs as that user with their role and permissions.
+            Before doing anything else, call GetCurrentUser to learn who the user is and whether they are a Doctor or a Patient,
+            and address them by name. Only offer actions that fit their user type.
             Never ask for usernames or passwords to sign in. Booking requires a Patient account; schedule actions require a Doctor account.
             If a tool fails with 401 or 403, explain that the signed-in user is not allowed to do that action.
             Always confirm before performing destructive operations like deleting users or cancelling appointments.

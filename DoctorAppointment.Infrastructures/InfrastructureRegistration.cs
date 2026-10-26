@@ -18,6 +18,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>();
         services.AddScoped<IHospitalRepository, HospitalRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         return services;
     }

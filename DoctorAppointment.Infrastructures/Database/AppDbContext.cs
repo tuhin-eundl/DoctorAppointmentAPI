@@ -18,6 +18,7 @@ public sealed class AppDbContext : AuditDbContext
     public DbSet<DoctorScheduleDay> DoctorScheduleDays { get; set; }
     public DbSet<Hospital> Hospitals { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +38,13 @@ public sealed class AppDbContext : AuditDbContext
                 .IsUnique()
                 .HasFilter("[Status] IN (0, 1) AND [IsDeleted] = 0");
             appointment.HasIndex(a => new { a.PatientId, a.AppointmentDate });
+        });
+
+        modelBuilder.Entity<Notification>(notification =>
+        {
+            notification.Property(n => n.Message).HasMaxLength(1000).IsRequired();
+            notification.HasOne<User>().WithMany().HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Restrict);
+            notification.HasIndex(n => new { n.UserId, n.IsRead, n.CreatedAt });
         });
 
         modelBuilder.Entity<DoctorSchedule>().Property(s => s.MaxAppointmentsPerDay).HasDefaultValue(20);

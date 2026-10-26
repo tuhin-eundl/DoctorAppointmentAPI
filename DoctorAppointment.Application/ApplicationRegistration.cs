@@ -14,6 +14,7 @@ public static class ApplicationRegistration
         services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
         services.AddScoped<IHospitalService, HospitalService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
     }
