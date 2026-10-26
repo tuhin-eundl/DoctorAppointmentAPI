@@ -32,11 +32,11 @@ public sealed class AppDbContext : AuditDbContext
             appointment.HasOne(a => a.Doctor).WithMany().HasForeignKey(a => a.DoctorId).OnDelete(DeleteBehavior.Restrict);
             appointment.HasOne(a => a.ScheduleDay).WithMany().HasForeignKey(a => a.ScheduleDayId).OnDelete(DeleteBehavior.Restrict);
 
-            // Two active (Pending/Approved) appointments can never share a serial number on the same day,
-            // even if two patients book at the same moment.
+            // Many patients can request a slot, but only one Approved appointment can hold it,
+            // even if the doctor approves two requests at the same moment.
             appointment.HasIndex(a => new { a.ScheduleDayId, a.SerialNumber })
                 .IsUnique()
-                .HasFilter("[Status] IN (0, 1) AND [IsDeleted] = 0");
+                .HasFilter("[Status] = 1 AND [IsDeleted] = 0");
             appointment.HasIndex(a => new { a.PatientId, a.AppointmentDate });
         });
 

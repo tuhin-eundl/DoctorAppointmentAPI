@@ -30,6 +30,11 @@ public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctor
         ValidateScheduleRequest(request.FromDate, request.ToDate, request.ScheduleDays);
         ValidateCapacity(request.MaxAppointmentsPerDay, request.AverageAppointmentMinutes);
 
+        if (request.FromDate < DateOnly.FromDateTime(DateTime.Now))
+        {
+            throw new ValidationException("A schedule can't start in the past. Pick today or a later day.");
+        }
+
         if (await _repository.HasOverlappingScheduleAsync(doctorId, request.FromDate, request.ToDate))
         {
             throw new ConflictException("A schedule already exists for one or more dates in this range. Delete it before adding a replacement.");
@@ -88,6 +93,7 @@ public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctor
         }
 
         var requestedDays = request.ScheduleDays.ToDictionary(day => day.Date);
+        EnsurePastDaysUnchanged(schedule.ScheduleDays, requestedDays);
 
         // Don't drop days, or shrink a day below its bookings, while patients hold places on it.
         var activeBookings = await _appointmentRepository.CountActiveByDayAsync(
@@ -230,6 +236,31 @@ public sealed class DoctorScheduleService : BaseService<DoctorSchedule>, IDoctor
         }
 
         return schedule;
+    }
+
+    /// <summary>Days before today are history: they can't be added, removed or given new hours.</summary>
+    private static void EnsurePastDaysUnchanged(
+        ICollection<DoctorScheduleDay> existingDays,
+        IReadOnlyDictionary<DateOnly, DoctorScheduleDayDto> requestedDays)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var existing = existingDays.ToDictionary(day => day.ScheduleDate);
+
+        var changed = requestedDays.Values.FirstOrDefault(day =>
+            day.Date < today &&
+            (!existing.TryGetValue(day.Date, out var current) ||
+             current.StartTime != day.StartTime ||
+             current.EndTime != day.EndTime));
+        if (changed is not null)
+        {
+            throw new ValidationException($"{changed.Date:MMM d} has already passed, so it can't be added or changed.");
+        }
+
+        var removed = existing.Keys.FirstOrDefault(date => date < today && !requestedDays.ContainsKey(date));
+        if (removed != default)
+        {
+            throw new ValidationException($"{removed:MMM d} has already passed, so it can't be removed from the schedule.");
+        }
     }
 
     private static void ValidateCapacity(int maxAppointmentsPerDay, int averageAppointmentMinutes)

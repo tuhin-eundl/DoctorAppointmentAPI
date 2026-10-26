@@ -11,25 +11,31 @@ public sealed class NotificationService : INotificationService
 
     private readonly INotificationRepository _repository;
     private readonly IExecutionContextAccessor _contextAccessor;
+    private readonly INotificationPublisher _publisher;
 
     public NotificationService(
         INotificationRepository repository,
-        IExecutionContextAccessor contextAccessor)
+        IExecutionContextAccessor contextAccessor,
+        INotificationPublisher publisher)
     {
         _repository = repository;
         _contextAccessor = contextAccessor;
+        _publisher = publisher;
     }
 
     public async Task<Notification> NotifyAsync(int userId, string message)
     {
         ValidateMessage(message);
 
-        return await _repository.AddAsync(new Notification
+        var notification = await _repository.AddAsync(new Notification
         {
             UserId = userId,
             Message = message.Trim(),
             CreatedAt = DateTime.UtcNow
         });
+        // Pushed only after saving, so a user who reacts to it always finds it on the server.
+        await _publisher.PublishAsync([notification]);
+        return notification;
     }
 
     public async Task NotifyManyAsync(IEnumerable<int> userIds, string message)
@@ -53,6 +59,7 @@ public sealed class NotificationService : INotificationService
         }
 
         await _repository.AddRangeAsync(notifications);
+        await _publisher.PublishAsync(notifications);
     }
 
     public Task<IReadOnlyList<Notification>> GetForUserAsync(bool unreadOnly = false, int take = 50)

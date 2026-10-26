@@ -14,7 +14,8 @@ public sealed class NotificationTools(
 
     [KernelFunction, Description(
         "Returns the signed-in user's notifications, newest first. Each item has id, message, isRead and createdAt (UTC). " +
-        "Doctors get a notification when a patient books an appointment that is waiting for approval. " +
+        "Patients are notified when a doctor approves, declines or cancels their appointment, or when their request is closed " +
+        "because the doctor confirmed another patient for that time. Doctors are notified when a patient books, withdraws or cancels. " +
         "Use this when the user asks about notifications, alerts, or what's new.")]
     [McpServerTool]
     public async Task<JsonElement> GetMyNotifications(

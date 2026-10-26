@@ -85,7 +85,7 @@ public sealed class AppointmentController : ControllerBase
             return Unauthorized();
         }
 
-        var appointment = await _appointmentService.UpdateStatusAsync(userId, appointmentId, request.Status);
+        var appointment = await _appointmentService.UpdateStatusAsync(userId, appointmentId, request.Status, request.Reason);
         return Ok(AppointmentProfile.EntityToDto(appointment));
     }
 

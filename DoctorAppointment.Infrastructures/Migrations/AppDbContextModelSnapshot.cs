@@ -82,7 +82,7 @@ namespace DoctorAppointment.Infrastructures.Migrations
 
                     b.HasIndex("ScheduleDayId", "SerialNumber")
                         .IsUnique()
-                        .HasFilter("[Status] IN (0, 1) AND [IsDeleted] = 0");
+                        .HasFilter("[Status] = 1 AND [IsDeleted] = 0");
 
                     b.ToTable("Appointments");
                 });

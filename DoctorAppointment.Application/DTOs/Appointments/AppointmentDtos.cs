@@ -3,8 +3,11 @@ namespace DoctorAppointment.Application.DTOs.Appointments;
 /// <summary>A patient asks for a time slot on one of a doctor's schedule days.</summary>
 public record BookAppointmentDto(int ScheduleDayId, TimeOnly StartTime, string? Reason);
 
-/// <summary>Approved, Declined (doctor) or Cancelled (patient or doctor).</summary>
-public record UpdateAppointmentStatusDto(string Status);
+/// <summary>
+/// Approved, Declined (doctor) or Cancelled (patient or doctor). Reason is the doctor's optional
+/// explanation when declining or cancelling, shown to the patient.
+/// </summary>
+public record UpdateAppointmentStatusDto(string Status, string? Reason = null);
 
 public record AppointmentPersonDto(
     int Id,
@@ -22,7 +25,7 @@ public record AppointmentDto(
     int SerialNumber,
     string Status,
     string? CancelledBy, // "Doctor" or "Patient" when cancelled, otherwise null
-    string? Reason,
+    string? Reason, // the patient's visit reason; the doctor's when Declined or Cancelled by the doctor; the conflict message when SlotTaken
     DateTime RequestedAt,
     AppointmentPersonDto Doctor,
     AppointmentPersonDto Patient);
@@ -36,7 +39,7 @@ public record DoctorSummaryDto(
     DateOnly? NextAvailableDate);
 
 /// <summary>
-/// One time slot. State is "Free", "Booked" (another patient holds it) or
+/// One time slot. State is "Free", "Booked" (the doctor approved a patient for it) or
 /// "Unavailable" (already passed today, or the day reached its patient limit).
 /// </summary>
 public record TimeSlotDto(TimeOnly Time, string State);
