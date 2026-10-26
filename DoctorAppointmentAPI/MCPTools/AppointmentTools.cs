@@ -20,8 +20,8 @@ public sealed class AppointmentTools(
     private const string BasePath = "/api/appointments";
 
     [KernelFunction, Description(
-        "Lists doctors that patients can book, with id, name, title, department and next available date. " +
-        "Requires authorization.")]
+        "Lists all doctors with id, firstName, lastName, title, department and nextAvailableDate (null if fully booked). " +
+        "Use it to find a doctor's id by name or department before calling GetDoctorAvailability.")]
     [McpServerTool]
     public async Task<JsonElement> GetBookableDoctors(CancellationToken cancellationToken = default)
     {
@@ -34,9 +34,9 @@ public sealed class AppointmentTools(
     }
 
     [KernelFunction, Description(
-        "Returns a doctor's upcoming bookable days. Each day has a scheduleDayId, date, capacity, free slot count " +
-        "and a list of time slots with state Free, Booked or Unavailable. Only Free slots can be booked. " +
-        "Requires authorization.")]
+        "Returns a doctor's upcoming bookable days. Each day has scheduleDayId, date, startTime, endTime, " +
+        "averageAppointmentMinutes, capacity, booked, freeSlots and a list of slots (time, state: Free, Booked or Unavailable). " +
+        "Only Free slots can be booked.")]
     [McpServerTool]
     public async Task<JsonElement> GetDoctorAvailability(
         [Description("The ID of the doctor")] int doctorId,
@@ -51,9 +51,10 @@ public sealed class AppointmentTools(
     }
 
     [KernelFunction, Description(
-        "Books an appointment for the logged-in patient on a doctor's schedule day at a Free time slot. " +
-        "The appointment starts as Pending until the doctor approves it. Only users with the Patient role can book. " +
-        "Use GetDoctorAvailability first to find the scheduleDayId and a Free startTime. Requires authorization.")]
+        "Books an appointment for the signed-in patient on a doctor's schedule day at a Free time slot. " +
+        "The appointment starts as Pending and the doctor is notified to approve it. Only Patients can book, " +
+        "and only one active appointment per doctor per day. " +
+        "Use GetDoctorAvailability first to find the scheduleDayId and a Free startTime.")]
     [McpServerTool]
     public async Task<JsonElement> BookAppointment(
         [Description("The booking details")] BookAppointmentRequest request,
@@ -68,8 +69,10 @@ public sealed class AppointmentTools(
     }
 
     [KernelFunction, Description(
-        "Returns the logged-in user's appointments (a patient's own bookings, or a doctor's bookings), newest first. " +
-        "Requires authorization.")]
+        "Returns the signed-in user's appointments (a patient's own bookings, or a doctor's bookings), newest date first. " +
+        "Each item has id, date, startTime, endTime, serialNumber, status (Pending, Approved, Declined, Cancelled), " +
+        "cancelledBy, reason, requestedAt, and doctor/patient details (id, name, title, department, age, gender). " +
+        "Use it to find an appointment id before changing its status.")]
     [McpServerTool]
     public async Task<JsonElement> GetMyAppointments(CancellationToken cancellationToken = default)
     {
@@ -82,8 +85,10 @@ public sealed class AppointmentTools(
     }
 
     [KernelFunction, Description(
-        "Changes an appointment's status. Doctors can set Approved or Declined; patients and doctors can set Cancelled. " +
-        "Always confirm with the user before cancelling. Requires authorization.")]
+        "Changes an appointment's status. Allowed changes: a Doctor can set a Pending appointment to Approved or Declined, " +
+        "and an Approved one to Cancelled; a Patient can set a Pending or Approved appointment to Cancelled. " +
+        "Past appointments can't be cancelled. Get the appointment id from GetMyAppointments. " +
+        "Always confirm with the user before declining or cancelling.")]
     [McpServerTool]
     public async Task<JsonElement> UpdateAppointmentStatus(
         [Description("The ID of the appointment")] int appointmentId,

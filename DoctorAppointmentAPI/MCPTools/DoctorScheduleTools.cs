@@ -215,7 +215,6 @@ public sealed class DoctorScheduleTools(
                 ParseTime(dayOverride.EndTime, "dayOverrides.endTime"));
         }
 
-        // The API requires exactly one entry for every date in the range, so expand it here.
         var scheduleDays = new List<object>();
         for (var date = fromDate; date <= toDate; date = date.AddDays(1))
         {

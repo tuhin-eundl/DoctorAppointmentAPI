@@ -20,6 +20,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<UserTools>();
 builder.Services.AddTransient<AppointmentTools>();
 builder.Services.AddTransient<DoctorScheduleTools>();
+builder.Services.AddTransient<NotificationTools>();
+builder.Services.AddTransient<HospitalTools>();
 
 builder.Services.AddHttpClient("DoctorAppointmentApi", client =>
 {
@@ -94,6 +96,8 @@ builder.Services.AddTransient<Kernel>(sp =>
 
     var doctorScheduleTools = sp.GetRequiredService<DoctorScheduleTools>();
     kernelBuilder.Plugins.AddFromObject(doctorScheduleTools, pluginName: "DoctorSchedules");
+    kernelBuilder.Plugins.AddFromObject(sp.GetRequiredService<NotificationTools>(), pluginName: "Notifications");
+    kernelBuilder.Plugins.AddFromObject(sp.GetRequiredService<HospitalTools>(), pluginName: "Hospitals");
 
     return kernelBuilder.Build();
 });
@@ -153,7 +157,9 @@ builder.Services
     })
     .WithTools<UserTools>()
     .WithTools<DoctorScheduleTools>()
-    .WithTools<AppointmentTools>();
+    .WithTools<AppointmentTools>()
+    .WithTools<NotificationTools>()
+    .WithTools<HospitalTools>();
 
 var app = builder.Build();
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
+using System.Security.Claims;
 
 namespace DoctorAppointment.Service.Controllers;
 
@@ -37,6 +38,42 @@ public sealed class UserController : ControllerBase
     {
         var users = await _userService.ListAsync();
         return Ok(users);
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    [Produces("application/json")]
+    [SwaggerOperation("Returns the signed-in user with their type (Doctor or Patient).")]
+    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the signed-in user.", typeof(CurrentUserDto))]
+    [SwaggerResponse((int)HttpStatusCode.NotFound, "Returned if the signed-in user no longer exists.")]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
+    [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userService.GetUserAsync(userId);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new CurrentUserDto(
+            user.Id,
+            user.FirstName,
+            user.LastName,
+            user.Title,
+            user.Username,
+            user.Email,
+            user.Age,
+            user.Gender,
+            user.Role.ToString(),
+            user.Department?.ToString()));
     }
 
     [HttpGet("doctors-with-schedule")]

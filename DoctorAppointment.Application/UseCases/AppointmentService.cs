@@ -18,15 +18,18 @@ public sealed class AppointmentService : IAppointmentService
     private readonly IAppointmentRepository _repository;
     private readonly IDoctorScheduleRepository _scheduleRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationRepository _notificationRepository;
 
     public AppointmentService(
         IAppointmentRepository repository,
         IDoctorScheduleRepository scheduleRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        INotificationRepository notificationRepository)
     {
         _repository = repository;
         _scheduleRepository = scheduleRepository;
         _userRepository = userRepository;
+        _notificationRepository = notificationRepository;
     }
 
     private sealed record BookableDay(DoctorScheduleDay Day, int DoctorId, int Capacity, int SlotMinutes);
