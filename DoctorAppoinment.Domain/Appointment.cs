@@ -39,5 +39,7 @@ public enum AppointmentStatus
     Declined,
     Cancelled,
     /// <summary>Closed automatically: the doctor approved another patient for the same time slot.</summary>
-    SlotTaken
+    SlotTaken,
+    /// <summary>Its time slot ended while it was still Pending or Approved.</summary>
+    Overdue
 }

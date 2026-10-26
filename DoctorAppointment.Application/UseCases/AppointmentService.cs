@@ -242,6 +242,8 @@ public sealed class AppointmentService : IAppointmentService
         var user = await _userRepository.GetAsync(userId)
             ?? throw new NotFoundException(nameof(User), userId);
 
+        // Statuses are brought up to date on every read, so a missed visit always shows as Overdue.
+        await _repository.MarkOverdueAsync(DateTime.Now);
         return user.Role == UserRole.Doctor
             ? await _repository.GetForDoctorAsync(userId)
             : await _repository.GetForPatientAsync(userId);
@@ -250,7 +252,7 @@ public sealed class AppointmentService : IAppointmentService
     public async Task<Appointment> UpdateStatusAsync(int userId, int appointmentId, string status, string? reason)
     {
         if (!Enum.TryParse<AppointmentStatus>(status, ignoreCase: true, out var next) ||
-            next is AppointmentStatus.Pending or AppointmentStatus.SlotTaken)
+            next is AppointmentStatus.Pending or AppointmentStatus.SlotTaken or AppointmentStatus.Overdue)
         {
             throw new ValidationException("Status must be Approved, Declined or Cancelled.");
         }
@@ -261,6 +263,8 @@ public sealed class AppointmentService : IAppointmentService
             throw new ValidationException($"Keep the reason to {MaxReasonLength} characters or fewer.");
         }
 
+        // An appointment whose time has passed can't be approved or cancelled any more.
+        await _repository.MarkOverdueAsync(DateTime.Now);
         var appointment = await _repository.GetWithDetailsAsync(appointmentId);
         var isDoctor = appointment?.DoctorId == userId;
         var isPatient = appointment?.PatientId == userId;
@@ -279,6 +283,10 @@ public sealed class AppointmentService : IAppointmentService
             (false, AppointmentStatus.Pending or AppointmentStatus.Approved, AppointmentStatus.Cancelled) => true,
             _ => false
         };
+        if (!allowed && current == AppointmentStatus.Overdue)
+        {
+            throw new ValidationException("This appointment's time has already passed, so it can't be changed.");
+        }
         if (!allowed && current == AppointmentStatus.SlotTaken)
         {
             throw new ValidationException("This request was closed because another patient was approved for the same time.");

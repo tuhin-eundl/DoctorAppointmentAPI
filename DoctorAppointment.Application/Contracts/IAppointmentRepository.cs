@@ -19,5 +19,7 @@ public interface IAppointmentRepository : IBaseRepository<Appointment>
     Task<List<Appointment>> GetPendingInSlotAsync(int scheduleDayId, int serialNumber, int exceptId);
     /// <summary>Number of Pending or Approved appointments per schedule day.</summary>
     Task<Dictionary<int, int>> CountActiveByDayAsync(IReadOnlyCollection<int> scheduleDayIds);
+    /// <summary>Marks Pending or Approved appointments whose time slot has ended as Overdue. Returns how many changed.</summary>
+    Task<int> MarkOverdueAsync(DateTime now);
     Task<bool> PatientHasActiveAppointmentAsync(int patientId, int doctorId, DateOnly date, TimeOnly startTime);
 }

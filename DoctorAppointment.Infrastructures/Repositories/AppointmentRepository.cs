@@ -75,6 +75,28 @@ public sealed class AppointmentRepository : BaseRepository<Appointment>, IAppoin
             .GroupBy(a => a.ScheduleDayId)
             .ToDictionaryAsync(g => g.Key, g => g.Count());
 
+    public Task<int> MarkOverdueAsync(DateTime now)
+    {
+        var today = DateOnly.FromDateTime(now);
+        var timeNow = TimeOnly.FromDateTime(now);
+
+        // A slot ends at its start plus the schedule's appointment length. A slot running past midnight
+        // wraps around (its end is before its start), so it's only caught once its date is over.
+        // Bulk update: it skips SaveChanges, so the audit columns are set here.
+        return _db.Appointments
+            .IgnoreQueryFilters()
+            .Where(a => !a.IsDeleted && ActiveStatuses.Contains(a.Status))
+            .Where(a =>
+                a.AppointmentDate < today ||
+                (a.AppointmentDate == today &&
+                 a.StartTime.AddMinutes(a.ScheduleDay!.DoctorSchedule!.AverageAppointmentMinutes) > a.StartTime &&
+                 a.StartTime.AddMinutes(a.ScheduleDay!.DoctorSchedule!.AverageAppointmentMinutes) <= timeNow))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(a => a.Status, AppointmentStatus.Overdue)
+                .SetProperty(a => a.UpdatedAt, now)
+                .SetProperty(a => a.UpdatedBy, "system"));
+    }
+
     public Task<bool> PatientHasActiveAppointmentAsync(int patientId, int doctorId, DateOnly date, TimeOnly startTime) =>
         _db.Appointments.AnyAsync(a =>
             a.PatientId == patientId &&
