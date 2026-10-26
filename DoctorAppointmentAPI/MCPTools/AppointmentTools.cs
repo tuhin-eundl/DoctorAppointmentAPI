@@ -88,13 +88,14 @@ public sealed class AppointmentTools(
     public async Task<JsonElement> UpdateAppointmentStatus(
         [Description("The ID of the appointment")] int appointmentId,
         [Description("The new status. Allowed values: Approved, Declined, Cancelled")] string status,
+        [Description("Optional. The doctor's reason when declining or cancelling, shown to the patient")] string? reason = null,
         CancellationToken cancellationToken = default)
     {
         var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.PatchAsJsonAsync(
             $"{BasePath}/{appointmentId}/status",
-            new { status },
+            new { status, reason },
             cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
 

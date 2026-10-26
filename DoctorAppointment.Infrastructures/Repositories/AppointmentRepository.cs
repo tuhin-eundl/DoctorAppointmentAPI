@@ -54,16 +54,32 @@ public sealed class AppointmentRepository : BaseRepository<Appointment>, IAppoin
             .AsNoTracking()
             .ToListAsync();
 
+    public Task<List<Appointment>> GetApprovedOnDaysAsync(IReadOnlyCollection<int> scheduleDayIds) =>
+        _db.Appointments
+            .Where(a => scheduleDayIds.Contains(a.ScheduleDayId) && a.Status == AppointmentStatus.Approved)
+            .AsNoTracking()
+            .ToListAsync();
+
+    public Task<List<Appointment>> GetPendingInSlotAsync(int scheduleDayId, int serialNumber, int exceptId) =>
+        _db.Appointments
+            .Where(a =>
+                a.ScheduleDayId == scheduleDayId &&
+                a.SerialNumber == serialNumber &&
+                a.Id != exceptId &&
+                a.Status == AppointmentStatus.Pending)
+            .ToListAsync();
+
     public Task<Dictionary<int, int>> CountActiveByDayAsync(IReadOnlyCollection<int> scheduleDayIds) =>
         _db.Appointments
             .Where(a => scheduleDayIds.Contains(a.ScheduleDayId) && ActiveStatuses.Contains(a.Status))
             .GroupBy(a => a.ScheduleDayId)
             .ToDictionaryAsync(g => g.Key, g => g.Count());
 
-    public Task<bool> PatientHasActiveAppointmentAsync(int patientId, int doctorId, DateOnly date) =>
+    public Task<bool> PatientHasActiveAppointmentAsync(int patientId, int doctorId, DateOnly date, TimeOnly startTime) =>
         _db.Appointments.AnyAsync(a =>
             a.PatientId == patientId &&
             a.DoctorId == doctorId &&
-            a.AppointmentDate == date &&
+            a.AppointmentDate == date && 
+            a.StartTime == startTime &&
             ActiveStatuses.Contains(a.Status));
 }
