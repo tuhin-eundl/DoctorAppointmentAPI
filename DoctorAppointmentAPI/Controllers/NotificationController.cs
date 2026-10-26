@@ -1,9 +1,11 @@
 using DoctorAppointment.Application.Contracts;
 using DoctorAppointment.Application.DTOs.Notifications;
+using DoctorAppointment.Application.Profiles.Notifications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
+using System.Security.Claims;
 
 namespace DoctorAppointment.Service.Controllers;
 
@@ -31,9 +33,39 @@ public sealed class NotificationController : ControllerBase
     {
         var notifications = await _notificationService.GetForUserAsync(unreadOnly, take);
 
-        return Ok(notifications
-            .Select(n => new NotificationDto(n.Id, n.Message, n.IsRead, n.CreatedAt))
-            .ToList());
+        return Ok(notifications.Select(NotificationProfile.EntityToDto).ToList());
+    }
+
+    [HttpGet("unread-count")]
+    [Produces("application/json")]
+    [SwaggerOperation("Returns how many of the signed-in user's notifications are unread.")]
+    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the unread count.", typeof(UnreadCountDto))]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
+    [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
+    public async Task<IActionResult> GetUnreadCount()
+    {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        return Ok(new UnreadCountDto(await _notificationService.GetUnreadCountAsync(userId)));
+    }
+
+    [HttpPatch("read-all")]
+    [SwaggerOperation("Marks all of the signed-in user's notifications as read.")]
+    [SwaggerResponse((int)HttpStatusCode.NoContent, "The notifications were marked as read.")]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
+    [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
+    public async Task<IActionResult> MarkAllAsRead()
+    {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        await _notificationService.MarkAllAsReadAsync(userId);
+        return NoContent();
     }
 
     [HttpPatch("{notificationId:long}/read")]
@@ -46,5 +78,13 @@ public sealed class NotificationController : ControllerBase
     {
         await _notificationService.MarkAsReadAsync(notificationId);
         return NoContent();
+    }
+
+    private bool TryGetCurrentUserId(out int userId)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        return int.TryParse(userIdClaim, out userId);
     }
 }

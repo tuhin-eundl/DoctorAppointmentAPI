@@ -18,19 +18,31 @@ public sealed class AppointmentService : IAppointmentService
     private readonly IAppointmentRepository _repository;
     private readonly IDoctorScheduleRepository _scheduleRepository;
     private readonly IUserRepository _userRepository;
-    private readonly INotificationRepository _notificationRepository;
+    private readonly INotificationService _notificationService;
 
     public AppointmentService(
         IAppointmentRepository repository,
         IDoctorScheduleRepository scheduleRepository,
         IUserRepository userRepository,
-        INotificationRepository notificationRepository)
+        INotificationService notificationService)
     {
         _repository = repository;
         _scheduleRepository = scheduleRepository;
         _userRepository = userRepository;
-        _notificationRepository = notificationRepository;
+        _notificationService = notificationService;
     }
+
+    private static string FullName(User? user) =>
+        user is null ? "A user" : $"{user.FirstName} {user.LastName}".Trim();
+
+    private static string DoctorName(User? doctor) => doctor is null ? "Your doctor" : $"Dr. {FullName(doctor)}";
+
+    /// <summary>"Mon, Oct 27 at 10:30 AM"</summary>
+    private static string When(DateOnly date, TimeOnly time) =>
+        $"{date.ToString("ddd, MMM d", CultureInfo.InvariantCulture)} at {TimeSlots.Format(time)}";
+
+    private static string WithReason(string message, string? reason) =>
+        string.IsNullOrWhiteSpace(reason) ? message : $"{message} Reason: {reason}";
 
     private sealed record BookableDay(DoctorScheduleDay Day, int DoctorId, int Capacity, int SlotMinutes);
 
@@ -216,6 +228,12 @@ public sealed class AppointmentService : IAppointmentService
             Status = AppointmentStatus.Pending,
             Reason = reason
         });
+
+        await _notificationService.NotifyAsync(
+            target.DoctorId,
+            $"{FullName(patient)} requested an appointment on {When(target.Day.ScheduleDate, request.StartTime)}. " +
+            "It's waiting for your approval.");
+
         return (await _repository.GetWithDetailsAsync(appointment.Id))!;
     }
 
@@ -277,6 +295,7 @@ public sealed class AppointmentService : IAppointmentService
 
         // Update only the appointment row; the detailed copy above is read-only.
         var entity = (await _repository.GetAsync(appointmentId))!;
+        var closedPatientIds = new List<int>();
         if (next == AppointmentStatus.Approved)
         {
             await EnsureCanApproveAsync(entity);
@@ -289,6 +308,7 @@ public sealed class AppointmentService : IAppointmentService
             {
                 other.Status = AppointmentStatus.SlotTaken;
                 other.Reason = conflictReason;
+                closedPatientIds.Add(other.PatientId);
             }
         }
 
@@ -301,7 +321,49 @@ public sealed class AppointmentService : IAppointmentService
         }
         // Also saves the closed requests for the same slot, which the same context is tracking.
         await _repository.UpdateAsync(entity);
+
+        await NotifyStatusChangeAsync(appointment, current, next, isDoctor, entity.Reason, closedPatientIds);
         return (await _repository.GetWithDetailsAsync(appointmentId))!;
+    }
+
+    /// <summary>Tells the other side of the appointment what changed, and patients whose requests were closed.</summary>
+    private async Task NotifyStatusChangeAsync(
+        Appointment appointment,
+        AppointmentStatus previous,
+        AppointmentStatus next,
+        bool byDoctor,
+        string? reason,
+        IReadOnlyCollection<int> closedPatientIds)
+    {
+        var when = When(appointment.AppointmentDate, appointment.StartTime);
+        var doctor = DoctorName(appointment.Doctor);
+
+        if (byDoctor)
+        {
+            var message = next switch
+            {
+                AppointmentStatus.Approved => $"{doctor} approved your appointment on {when}.",
+                AppointmentStatus.Declined => WithReason($"{doctor} declined your appointment request for {when}.", reason),
+                _ => WithReason($"{doctor} cancelled your appointment on {when}.", reason)
+            };
+            await _notificationService.NotifyAsync(appointment.PatientId, message);
+        }
+        else
+        {
+            var patient = FullName(appointment.Patient);
+            var message = previous == AppointmentStatus.Pending
+                ? $"{patient} withdrew their appointment request for {when}."
+                : $"{patient} cancelled their appointment on {when}.";
+            await _notificationService.NotifyAsync(appointment.DoctorId, message);
+        }
+
+        if (closedPatientIds.Count > 0)
+        {
+            await _notificationService.NotifyManyAsync(
+                closedPatientIds,
+                $"Your request with {doctor} for {when} was closed because the doctor confirmed another patient " +
+                "for that time. Please book another time.");
+        }
     }
 
     /// <summary>The slot must not already be approved for someone else, and the day must have room left.</summary>

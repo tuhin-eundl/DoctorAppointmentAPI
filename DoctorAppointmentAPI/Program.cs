@@ -11,6 +11,8 @@ using System.ClientModel;
 using System.Text;
 using System.Text.Json.Nodes;
 using DoctorAppointment.Service.Middlewares;
+using DoctorAppointment.Service.Hubs;
+using DoctorAppointment.Application.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +57,19 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+    };
+    // Browsers can't set headers on a WebSocket, so the SignalR client sends the token in the query string.
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var token = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments(NotificationHub.Path))
+            {
+                context.Token = token;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -114,6 +129,8 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<INotificationPublisher, SignalRNotificationPublisher>();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
@@ -184,6 +201,7 @@ app.UseAuthorization();
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapControllers();
+app.MapHub<NotificationHub>(NotificationHub.Path);
 app.MapMcp("/mcp")
     .RequireAuthorization();
 

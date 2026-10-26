@@ -5,3 +5,5 @@ public record NotificationDto(
     string Message,
     bool IsRead,
     DateTime CreatedAt);
+
+public record UnreadCountDto(int Count);
