@@ -21,5 +21,5 @@ public interface IAppointmentRepository : IBaseRepository<Appointment>
     Task<Dictionary<int, int>> CountActiveByDayAsync(IReadOnlyCollection<int> scheduleDayIds);
     /// <summary>Marks Pending or Approved appointments whose time slot has ended as Overdue. Returns how many changed.</summary>
     Task<int> MarkOverdueAsync(DateTime now);
-    Task<bool> PatientHasActiveAppointmentAsync(int patientId, int doctorId, DateOnly date, TimeOnly startTime);
+    Task<Appointment?> GetPatientActiveAppointmentAtAsync(int patientId, DateOnly date, TimeOnly startTime);
 }
