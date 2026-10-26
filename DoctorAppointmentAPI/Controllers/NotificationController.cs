@@ -36,4 +36,15 @@ public sealed class NotificationController : ControllerBase
             .ToList());
     }
 
+    [HttpPatch("{notificationId:long}/read")]
+    [SwaggerOperation("Marks one of the signed-in user's notifications as read.")]
+    [SwaggerResponse((int)HttpStatusCode.NoContent, "The notification was marked as read.")]
+    [SwaggerResponse((int)HttpStatusCode.NotFound, "The notification doesn't exist for this user.")]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
+    [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
+    public async Task<IActionResult> MarkAsRead(long notificationId)
+    {
+        await _notificationService.MarkAsReadAsync(notificationId);
+        return NoContent();
+    }
 }

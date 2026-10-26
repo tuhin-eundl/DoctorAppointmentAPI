@@ -69,8 +69,13 @@ public sealed class NotificationService : INotificationService
         return _repository.CountUnreadAsync(userId);
     }
 
-    public async Task MarkAsReadAsync(int userId, long notificationId)
+    public async Task MarkAsReadAsync(long notificationId)
     {
+        if (!int.TryParse(_contextAccessor.UserId, out var userId))
+        {
+            throw new UnauthorizedAccessException("User is not authenticated.");
+        }
+
         var notification = await _repository.GetByIdAsync(notificationId);
         if (notification is null || notification.UserId != userId)
         {
