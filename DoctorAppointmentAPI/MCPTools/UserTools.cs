@@ -59,14 +59,16 @@ public sealed class UserTools(
         return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
     }
 
-    [KernelFunction, Description("Returns a list of all registered system users.")]
+    [KernelFunction, Description(
+        "Returns all registered users (patients and doctors) with id, name, username, email, age, gender, role and department. " +
+        "Use it to look up a user's id by name or email. To find bookable doctors, prefer GetBookableDoctors or GetDoctorsWithSchedule.")]
     [McpServerTool]
     public async Task<List<UserDto>> GetAllUsers(CancellationToken cancellationToken = default)
     {
         var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.GetAsync(BasePath, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await HttpHandler.EnsureSuccessAsync(response, cancellationToken);
 
         var users = await response.Content.ReadFromJsonAsync<List<UserDto>>(cancellationToken: cancellationToken);
         return users ?? [];
@@ -95,7 +97,7 @@ public sealed class UserTools(
         return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
     }
 
-    [KernelFunction, Description("Returns a user by their unique ID.")]
+    [KernelFunction, Description("Returns a user's profile by id (name, username, email, age, gender, role, department). Returns null if the user does not exist.")]
     [McpServerTool]
     public async Task<UserDto?> GetUserById(
         [Description("The unique integer ID of the user to retrieve")] int id,
@@ -110,12 +112,15 @@ public sealed class UserTools(
             return null;
         }
 
-        response.EnsureSuccessStatusCode();
+        await HttpHandler.EnsureSuccessAsync(response, cancellationToken);
 
         return await response.Content.ReadFromJsonAsync<UserDto>(cancellationToken: cancellationToken);
     }
 
-    [KernelFunction, Description("Creates a new user (Patient or Doctor). Requires first name, username, password (min 6 chars) and role; email, age, gender, last name, title, department and hospital IDs are optional.")]
+    [KernelFunction, Description(
+        "Creates a new user account (Patient or Doctor). Requires firstName, username, password (min 6 chars) and role; " +
+        "email, age, gender, lastName, title, department and hospitalIds are optional. Username and email must be unique. " +
+        "Use GetHospitals to find hospitalIds.")]
     [McpServerTool]
     public async Task<UserDto?> CreateUser(
         [Description("The user details required to create the account")] CreateUserRequest user,
@@ -124,12 +129,15 @@ public sealed class UserTools(
         var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.PostAsJsonAsync(BasePath, user, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        await HttpHandler.EnsureSuccessAsync(response, cancellationToken);
 
         return await response.Content.ReadFromJsonAsync<UserDto>(cancellationToken: cancellationToken);
     }
 
-    [KernelFunction, Description("Updates an existing user by their ID. Send the full user details (first name, username, password, role and any optional fields).")]
+    [KernelFunction, Description(
+        "Updates an existing user by id. Send the full user details (firstName, username, password, role and any optional fields); " +
+        "get the current values with GetUserById first. Note: the API currently only applies changes to hospitalIds, " +
+        "so tell the user if they asked to change other fields.")]
     [McpServerTool]
     public async Task<UserDto?> UpdateUser(
         [Description("The unique integer ID of the user to update")] int id,
@@ -139,12 +147,12 @@ public sealed class UserTools(
         var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.PutAsJsonAsync($"{BasePath}/{id}", user, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        await HttpHandler.EnsureSuccessAsync(response, cancellationToken);
 
         return await response.Content.ReadFromJsonAsync<UserDto>(cancellationToken: cancellationToken);
     }
 
-    [KernelFunction, Description("Deletes a user permanently from the system using their ID.")]
+    [KernelFunction, Description("Deletes (deactivates) a user by id. Always confirm with the user before calling this.")]
     [McpServerTool]
     public async Task<string> DeleteUser(
         [Description("The unique integer ID of the user to delete")] int id,
@@ -153,22 +161,8 @@ public sealed class UserTools(
         var client = HttpHandler.CreateClient(httpClientFactory, httpContextAccessor);
 
         using var response = await client.DeleteAsync($"{BasePath}/{id}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await HttpHandler.EnsureSuccessAsync(response, cancellationToken);
 
         return $"User with ID {id} deleted successfully.";
-    }
-
-    private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        if (response.IsSuccessStatusCode)
-        {
-            return;
-        }
-
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        throw new HttpRequestException(
-            $"API returned {(int)response.StatusCode} ({response.StatusCode}): {body}",
-            null,
-            response.StatusCode);
     }
 }

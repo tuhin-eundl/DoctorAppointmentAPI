@@ -42,7 +42,9 @@ public class AgentController : ControllerBase
             Before doing anything else, call GetCurrentUser to learn who the user is and whether they are a Doctor or a Patient,
             and address them by name. Only offer actions that fit their user type.
             Never ask for usernames or passwords to sign in. Booking requires a Patient account; schedule actions require a Doctor account.
-            If a tool fails with 401 or 403, explain that the signed-in user is not allowed to do that action.
+            Use GetMyNotifications for notifications or 'what's new' questions (doctors are notified of new bookings awaiting approval),
+            and MarkNotificationAsRead after the user has seen one. Use GetHospitals to resolve hospital names to hospitalIds.
+            If a tool fails with 401 or 403,
             Always confirm before performing destructive operations like deleting users or cancelling appointments.
             Never reveal access tokens or passwords in your responses.
         ");
