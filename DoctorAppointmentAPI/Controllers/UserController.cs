@@ -146,12 +146,12 @@ public sealed class UserController : ControllerBase
     [Authorize]
     [Produces("application/json")]
     [SwaggerOperation("Modify a specific user.")]
-    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the modified user.", typeof(CreateUserDto))]
+    [SwaggerResponse((int)HttpStatusCode.OK, "Returns the modified user.", typeof(UserDto))]
     [SwaggerResponse((int)HttpStatusCode.NotFound, "Returned if the user does not exist.")]
     [SwaggerResponse((int)HttpStatusCode.Unauthorized, "Returned if no valid credentials are provided.")]
     [SwaggerResponse((int)HttpStatusCode.Forbidden, "Returned if the user doesn't have the correct permissions to execute the action.")]
     [SwaggerResponse((int)HttpStatusCode.InternalServerError, "If any unspecified error occurs.")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto user)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto user)
     {
         var existingUser = await _userService.GetUserAsync(id);
         if (existingUser == null)
@@ -159,12 +159,20 @@ public sealed class UserController : ControllerBase
             return NotFound();
         }
 
-        if(user.HospitalIds.Count > 0)
+        UserProfiles.ApplyUpdate(existingUser, user);
+
+        if(user.HospitalIds != null && user.HospitalIds.Count > 0)
         {
-            var hospitals = await Task.WhenAll(
-                user.HospitalIds.Select(id => _hospitalService.GetAsync(id))
-            );
-            existingUser.Hospitals = hospitals.Where(h => h != null).ToList();
+            var hospitals = new List<Domain.Hospital>();
+            foreach (var hospitalId in user.HospitalIds)
+            {
+                var hospital = await _hospitalService.GetAsync(hospitalId);
+                if (hospital != null)
+                {
+                    hospitals.Add(hospital);
+                }
+            }
+            existingUser.Hospitals = hospitals;
         }
 
         var updatedUser = await _userService.UpdateAsync(existingUser);

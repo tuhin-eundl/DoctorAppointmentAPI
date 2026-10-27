@@ -29,6 +29,20 @@ public static class UserProfiles
         };
     }
 
+    public static void ApplyUpdate(User user, UpdateUserDto userDto)
+    {
+        user.FirstName = userDto.FirstName;
+        user.LastName = userDto.LastName;
+        user.Title = userDto.Title;
+        user.Username = userDto.Username;
+        user.Email = userDto.Email;
+        user.Age = userDto.Age;
+        user.Gender = userDto.Gender;
+        user.Department = userDto.Department is null
+            ? Department.NA
+            : Enum.Parse<Department>(userDto.Department, ignoreCase: true);
+    }
+
     public static UserDto EntityToDto(User user)
     {
         return new UserDto(

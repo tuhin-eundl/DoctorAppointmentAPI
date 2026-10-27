@@ -16,6 +16,17 @@ public record CreateUserDto(
     string? Department,
     List<int>? HospitalIds);
 
+public record UpdateUserDto(
+    string FirstName,
+    string? LastName,
+    string? Title,
+    string Username,
+    string? Email,
+    int? Age,
+    string? Gender,
+    string? Department,
+    List<int>? HospitalIds);
+
 public record UserDto(
     int Id,
     string FirstName,

@@ -36,10 +36,7 @@ public sealed class UserService : BaseService<User>, IUserService
 
     public override async Task<User> AddAsync(User entity)
     {
-        if (await UserExistsAsync(entity.Username, entity.Email, null))
-        {
-            throw new ConflictException("User with the same username or email already exists.");
-        }
+        await EnsureUserIsUniqueAsync(entity.Username, entity.Email, null);
 
         entity.Password = _passwordHasher.HashPassword(
             entity,
@@ -48,6 +45,21 @@ public sealed class UserService : BaseService<User>, IUserService
         entity.CreatedBy = entity.Username;
 
         return await base.AddAsync(entity);
+    }
+
+    public override async Task<User> UpdateAsync(User entity)
+    {
+        await EnsureUserIsUniqueAsync(entity.Username, entity.Email, entity.Id);
+
+        return await base.UpdateAsync(entity);
+    }
+
+    private async Task EnsureUserIsUniqueAsync(string username, string? email, int? id)
+    {
+        if (await UserExistsAsync(username, email, id))
+        {
+            throw new ConflictException("User with the same username or email already exists.");
+        }
     }
 
     public async Task DeleteAsync(int id)
