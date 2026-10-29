@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using OpenAI.Chat;
 
 namespace DoctorAppointment.Service.Controllers;
 
@@ -21,11 +22,13 @@ public class AgentController : ControllerBase
 
     private readonly Kernel _kernel;
     private readonly ILogger<AgentController> _logger;
+    private readonly string? _reasoningEffort;
 
-    public AgentController(Kernel kernel, ILogger<AgentController> logger)
+    public AgentController(Kernel kernel, ILogger<AgentController> logger, IConfiguration configuration)
     {
         _kernel = kernel;
         _logger = logger;
+        _reasoningEffort = configuration["AiSettings:ReasoningEffort"];
     }
 
     public record ChatRequest(string UserPrompt);
@@ -36,10 +39,17 @@ public class AgentController : ControllerBase
     public record AgentChatRequest(List<AgentMessage> Messages);
 
     // Configure Auto Invocation so LLM can invoke the tool plugins automatically
-    private static OpenAIPromptExecutionSettings ExecutionSettings => new()
+    // Local thinking models (e.g. Qwen on Ollama) can put the final answer in the reasoning field and
+    // leave the reply empty after a tool call, so AiSettings:ReasoningEffort = "none" turns thinking off.
+    private OpenAIPromptExecutionSettings ExecutionSettings => new()
     {
         ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions, // Auto-execute tools
-        Temperature = 0.2
+        Temperature = 0.2,
+#pragma warning disable OPENAI001 // ChatReasoningEffortLevel is marked experimental by the OpenAI SDK
+        ReasoningEffort = string.IsNullOrWhiteSpace(_reasoningEffort)
+            ? null
+            : new ChatReasoningEffortLevel(_reasoningEffort)
+#pragma warning restore OPENAI001
     };
 
     [HttpPost("chat-stream")]
